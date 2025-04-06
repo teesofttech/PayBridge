@@ -1,0 +1,6 @@
+@PayBridge.SDK.Presentation_HostAddress = http://localhost:5007
+
+GET {{PayBridge.SDK.Presentation_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
