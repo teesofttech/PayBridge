@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace PayBridge.SDK.Application.Dtos.Response;
-public class PaymentStatusResponseDto
+public class PaymentStatusResponse
 {
     public string TransactionId { get; set; }
     public string Status { get; set; }

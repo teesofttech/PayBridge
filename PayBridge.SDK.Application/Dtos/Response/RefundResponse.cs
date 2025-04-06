@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace PayBridge.SDK.Application.Dtos.Response;
-public class RefundResponseDto
+public class RefundResponse
 {
     public string RefundTransactionId { get; set; }
     public decimal RefundAmount { get; set; }

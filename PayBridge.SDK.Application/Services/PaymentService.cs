@@ -1,9 +1,9 @@
 ﻿using PayBridge.SDK.Application.Dtos.Request;
 using PayBridge.SDK.Application.Dtos.Response;
 using PayBridge.SDK.Application.Interfaces;
-using System.Transactions;
 
 namespace PayBridge.SDK.Application.Services;
+
 public class PaymentService
 {
     private readonly ITransactionRepository _transactionRepository;
@@ -15,7 +15,7 @@ public class PaymentService
         _paymentGateway = paymentGateway;
     }
 
-    public async Task<PaymentStatusResponseDto> ProcessPayment(PaymentRequest paymentRequest)
+    public async Task<PaymentStatusResponse> ProcessPayment(PaymentRequest paymentRequest)
     {
         // Step 1: Send request to payment gateway and get a response.
         var paymentResponse = await _paymentGateway.ProcessPaymentAsync(paymentRequest);
@@ -23,7 +23,7 @@ public class PaymentService
         // Step 2: Save transaction record to DB if successful
         var transaction = new Domain.Entities.TransactionRecord
         {
-            TransactionUniqueId = paymentRequest.TransactionId,
+            // TransactionUniqueId = paymentRequest.TransactionId,
             Amount = paymentRequest.Amount,
             Currency = paymentRequest.Currency,
             Status = paymentResponse.Status,
@@ -35,13 +35,13 @@ public class PaymentService
         return paymentResponse;
     }
 
-    public async Task<PaymentStatusResponseDto> GetPaymentStatus(string transactionId)
+    public async Task<PaymentStatusResponse> GetPaymentStatus(string transactionId)
     {
         // Get the status of the transaction from the payment gateway.
         return await _paymentGateway.CheckPaymentStatusAsync(transactionId);
     }
 
-    public async Task<RefundResponseDto> ProcessRefund(string transactionId, decimal amount)
+    public async Task<RefundResponse> ProcessRefund(string transactionId, decimal amount)
     {
         // Step 1: Call the payment gateway to initiate refund
         var refundResponse = await _paymentGateway.ProcessRefundAsync(transactionId, amount);

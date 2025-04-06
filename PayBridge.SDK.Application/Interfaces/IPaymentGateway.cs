@@ -1,9 +1,5 @@
 ﻿using PayBridge.SDK.Application.Dtos.Request;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using PayBridge.SDK.Application.Dtos.Response;
 
 namespace PayBridge.SDK.Application.Interfaces;
 public interface IPaymentGateway

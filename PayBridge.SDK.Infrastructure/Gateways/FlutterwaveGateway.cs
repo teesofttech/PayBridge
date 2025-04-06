@@ -1,9 +1,6 @@
-﻿using PayBridge.SDK.Application.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using PayBridge.SDK.Application.Dtos.Request;
+using PayBridge.SDK.Application.Dtos.Response;
+using PayBridge.SDK.Application.Interfaces;
 
 namespace PayBridge.SDK.Infrastructure.Gateways;
 public class FlutterwaveGateway : IPaymentGateway
