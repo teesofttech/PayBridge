@@ -13,4 +13,9 @@
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\PayBridge.SDK.Application\PayBridge.SDK.Application.csproj" />
+    <ProjectReference Include="..\PayBridge.SDK.Infrastructure\PayBridge.SDK.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>

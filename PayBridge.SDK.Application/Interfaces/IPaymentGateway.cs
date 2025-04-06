@@ -4,7 +4,7 @@ using PayBridge.SDK.Application.Dtos.Response;
 namespace PayBridge.SDK.Application.Interfaces;
 public interface IPaymentGateway
 {
-    Task<PaymentResponse> ProcessPayment(PaymentRequest request);
-    Task<PaymentStatusResponse> GetPaymentStatus(string paymentId);
-    Task<RefundResponse> RefundPayment(string paymentId, decimal amount);
+    Task<PaymentResponse> ProcessPaymentAsync(PaymentRequest request);
+    Task<PaymentStatusResponse> GetPaymentStatusAsync(string paymentId);
+    Task<RefundResponse> RefundPaymentAsync(string paymentId, decimal amount);
 }

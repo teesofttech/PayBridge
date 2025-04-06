@@ -5,17 +5,17 @@ using PayBridge.SDK.Application.Interfaces;
 namespace PayBridge.SDK.Infrastructure.Gateways;
 public class FlutterwaveGateway : IPaymentGateway
 {
-    public Task<PaymentStatusResponse> GetPaymentStatus(string paymentId)
+    public Task<PaymentStatusResponse> GetPaymentStatusAsync(string paymentId)
     {
         throw new NotImplementedException();
     }
 
-    public Task<PaymentResponse> ProcessPayment(PaymentRequest request)
+    public Task<PaymentResponse> ProcessPaymentAsync(PaymentRequest request)
     {
         throw new NotImplementedException();
     }
 
-    public Task<RefundResponse> RefundPayment(string paymentId, decimal amount)
+    public Task<RefundResponse> RefundPaymentAsync(string paymentId, decimal amount)
     {
         throw new NotImplementedException();
     }
