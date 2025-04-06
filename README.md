@@ -47,3 +47,15 @@
    ```bash
    git clone https://github.com/teesofttech/PayBridge.git
    cd PayBridge
+
+2. **Set Up Database**:
+
+    Using Default Database: The SDK is configured to use a default database. Ensure your connection string is set in appsettings.json:
+    ```bash
+    "ConnectionStrings": {
+      "DefaultConnection": "Your_Default_Connection_String"
+    }
+3. **Apply Migrations**:
+      ```bash
+      dotnet ef database update
+
