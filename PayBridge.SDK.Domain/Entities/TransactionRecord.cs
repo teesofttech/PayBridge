@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PayBridge.SDK.Domain.Entities;
 public class TransactionRecord
 {
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public long Id { get; set; }
     public string Gateway { get; set; }
     public string PaymentId { get; set; }
@@ -14,4 +13,5 @@ public class TransactionRecord
     public string Currency { get; set; }
     public string Status { get; set; }
     public DateTime CreatedAt { get; set; }
+    public string TransactionUniqueId { get; set; }
 }

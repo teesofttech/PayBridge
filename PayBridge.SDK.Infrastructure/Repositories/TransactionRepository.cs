@@ -1,13 +1,10 @@
-﻿using PayBridge.SDK.Domain.Entities;
+﻿using Microsoft.EntityFrameworkCore;
+using PayBridge.SDK.Application.Interfaces;
+using PayBridge.SDK.Domain.Entities;
 using PayBridge.SDK.Infrastructure.Persistence;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PayBridge.SDK.Infrastructure.Repositories;
-internal class TransactionRepository : ITransactionRepository
+public class TransactionRepository : ITransactionRepository
 {
     private readonly PayBridgeDbContext _context;
 
@@ -16,9 +13,23 @@ internal class TransactionRepository : ITransactionRepository
         _context = context;
     }
 
-    public async Task LogTransaction(TransactionRecord transaction)
+    public async Task<IEnumerable<TransactionRecord>> GetAllTransactionsAsync()
     {
-        _context.Transactions.Add(transaction);
+        return await _context.Transactions
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    public async Task<TransactionRecord?> GetTransactionByIdAsync(string transactionId)
+    {
+        return await _context.Transactions
+            .FirstOrDefaultAsync(t => t.TransactionUniqueId == transactionId);
+    }
+
+
+    public async Task SaveTransactionAsync(TransactionRecord transaction)
+    {
+        await _context.Transactions.AddAsync(transaction);
         await _context.SaveChangesAsync();
     }
 }
