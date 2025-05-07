@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using PayBridge.SDK.Application.Interfaces;
+using PayBridge.SDK.Domain;
 using PayBridge.SDK.Domain.Entities;
 using PayBridge.SDK.Infrastructure.Persistence;
 

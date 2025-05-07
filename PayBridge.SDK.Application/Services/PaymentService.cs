@@ -1,20 +1,15 @@
 ﻿using PayBridge.SDK.Application.Dtos.Request;
 using PayBridge.SDK.Application.Dtos.Response;
 using PayBridge.SDK.Application.Interfaces;
+using PayBridge.SDK.Domain;
 
 namespace PayBridge.SDK.Application.Services;
 
-public class PaymentService : IPaymentService
+public class PaymentService(
+    ITransactionRepository _transactionRepository,
+    IPaymentGateway _paymentGateway)
+    : IPaymentService
 {
-    private readonly ITransactionRepository _transactionRepository;
-    private readonly IPaymentGateway _paymentGateway;
-
-    public PaymentService(ITransactionRepository transactionRepository, IPaymentGateway paymentGateway)
-    {
-        _transactionRepository = transactionRepository;
-        _paymentGateway = paymentGateway;
-    }
-
     public async Task<PaymentResponse> ProcessPaymentAsync(PaymentRequest paymentRequest)
     {
         // Step 1: Send request to payment gateway and get a response.

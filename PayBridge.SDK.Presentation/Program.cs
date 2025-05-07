@@ -1,8 +1,6 @@
 using PayBridge.SDK.Application.Interfaces;
 using PayBridge.SDK.Application.Services;
 using PayBridge.SDK.Infrastructure.Externsions;
-using PayBridge.SDK.Infrastructure.Gateways;
-using PayBridge.SDK.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,8 +11,8 @@ builder.Services.AddOpenApi();
 builder.Services.AddDBRepository(builder.Configuration, "MSSQL");
 
 builder.Services.AddScoped<IPaymentService, PaymentService>();
-builder.Services.AddScoped<IPaymentGateway, FlutterwaveGateway>();
-builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+//builder.Services.AddScoped<IPaymentGateway, FlutterwaveGateway>();
+//builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 
 var app = builder.Build();
 

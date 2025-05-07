@@ -2,27 +2,18 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PayBridge.SDK.Infrastructure.Persistence;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PayBridge.SDK.Infrastructure.Externsions;
 public static class IServiceCollectionExtensions
 {
     private const int RetryCount = 3;
     private const double RetryInSeconds = 1.1;
-    //public static IServiceCollection AddPersistenceLayer(this IServiceCollection services, IConfiguration configuration)
-    //{
-    //    services.AddRepositories();
-    //    return services;
-    //}
 
     public static IServiceCollection AddDBRepository(this IServiceCollection services, IConfiguration configuration, string provider)
     {
         var connectionString = configuration.GetConnectionString(nameof(PayBridgeDbContext));
-        if (provider == "MSSQL")
+        var providerConfigured = configuration["DatabaseProvider"] ?? provider;
+        if (provider == providerConfigured)
         {
             services.AddDbContext<PayBridgeDbContext>(options =>
             {
@@ -35,7 +26,7 @@ public static class IServiceCollectionExtensions
                     null));
             }, ServiceLifetime.Scoped);
         }
-        else if (provider == "PostgreSQL")
+        else if (provider == providerConfigured)
         {
             services.AddDbContext<PayBridgeDbContext>(options =>
             {
@@ -48,7 +39,7 @@ public static class IServiceCollectionExtensions
                     null));
             }, ServiceLifetime.Scoped);
         }
-        else if (provider == "MySQL")
+        else if (provider == providerConfigured)
         {
             //services.AddDbContext<PayBridgeDbContext>(options =>
             //{
