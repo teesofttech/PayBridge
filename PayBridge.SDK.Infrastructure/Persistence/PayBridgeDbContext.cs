@@ -8,5 +8,5 @@ public class PayBridgeDbContext : DbContext
     public PayBridgeDbContext(DbContextOptions<PayBridgeDbContext> options)
         : base(options) { }
 
-    public DbSet<TransactionRecord> Transactions { get; set; }
+    public DbSet<PaymentTransaction> Transactions { get; set; }
 }

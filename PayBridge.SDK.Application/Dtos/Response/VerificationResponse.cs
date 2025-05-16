@@ -6,12 +6,14 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace PayBridge.SDK.Application.Dtos.Response;
-public class RefundResponse
+public class VerificationResponse
 {
     public bool Success { get; set; }
-    public string RefundReference { get; set; }
+    public string TransactionReference { get; set; }
     public string Message { get; set; }
     public decimal Amount { get; set; }
+    public string Currency { get; set; }
     public PaymentStatus Status { get; set; }
-    public DateTime RefundDate { get; set; }
+    public DateTime PaymentDate { get; set; }
+    public Dictionary<string, string> GatewayResponse { get; set; } = new Dictionary<string, string>();
 }
