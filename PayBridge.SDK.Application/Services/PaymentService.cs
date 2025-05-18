@@ -28,14 +28,9 @@ public class PaymentService : IPaymentService
         _transactionRepository = transactionRepository ?? throw new ArgumentNullException(nameof(transactionRepository));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _config = config ?? throw new ArgumentNullException(nameof(config));
-        _gateways = new Dictionary<PaymentGatewayType, IPaymentGateway>();
 
-        foreach (var gateway in gateways)
-        {
-            // You'll need a way to determine the gateway type
-            // Either through a property or interface method
-           // _gateways[gateway] = gateway;
-        }
+        _gateways = gateways.ToDictionary(g => g.GatewayType);
+      
     }
 
     public async Task<PaymentResponse> CreatePaymentAsync(PaymentRequest request, PaymentGatewayType gateway = PaymentGatewayType.Automatic)

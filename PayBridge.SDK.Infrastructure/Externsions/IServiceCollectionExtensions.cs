@@ -80,6 +80,13 @@ public static class IServiceCollectionExtensions
             throw new ArgumentNullException(nameof(configAction));
         }
 
+        services.AddOptions<PaymentGatewayConfig>()
+                       .Configure<IConfiguration>((settings, configuration) =>
+                       {
+                           configuration.GetSection("PaymentGatewayConfig").Bind(settings);
+                       });
+
+
         // Configure the SDK
         var config = new PaymentGatewayConfig();
         configAction(config);

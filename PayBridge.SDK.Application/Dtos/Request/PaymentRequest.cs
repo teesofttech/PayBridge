@@ -1,13 +1,10 @@
 ﻿using PayBridge.SDK.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PayBridge.SDK.Application.Dtos.Request;
 public class PaymentRequest
 {
+    public string? Logo { get; set; }
+
     public decimal Amount { get; set; }
     public string Currency { get; set; }
     public string Description { get; set; }
@@ -19,4 +16,5 @@ public class PaymentRequest
     public Dictionary<string, string> Metadata { get; set; } = new Dictionary<string, string>();
     public PaymentMethodType PaymentMethodType { get; set; } = PaymentMethodType.Card;
     public string SavedPaymentMethodId { get; set; }
+    public string? AppName { get; set; }
 }

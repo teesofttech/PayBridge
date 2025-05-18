@@ -3,6 +3,7 @@ using PayBridge.SDK.Application.Dtos;
 using PayBridge.SDK.Application.Dtos.Request;
 using PayBridge.SDK.Application.Dtos.Response;
 using PayBridge.SDK.Application.Interfaces;
+using PayBridge.SDK.Domain.Enums;
 
 namespace PayBridge.SDK.Infrastructure.Gateways;
 internal abstract class BaseGateway : IPaymentGateway
@@ -10,6 +11,8 @@ internal abstract class BaseGateway : IPaymentGateway
     protected readonly PaymentGatewayConfig Config;
     protected readonly HttpClient HttpClient;
     protected readonly ILogger<BaseGateway> Logger;
+
+    public PaymentGatewayType GatewayType => throw new NotImplementedException();
 
     protected BaseGateway(PaymentGatewayConfig config, ILogger<BaseGateway> logger)
     {

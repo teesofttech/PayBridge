@@ -1,9 +1,12 @@
 ﻿using PayBridge.SDK.Application.Dtos.Request;
 using PayBridge.SDK.Application.Dtos.Response;
+using PayBridge.SDK.Domain.Enums;
 
 namespace PayBridge.SDK.Application.Interfaces;
 public interface IPaymentGateway
 {
+    PaymentGatewayType GatewayType { get; }
+
     /// <summary>
     /// Creates a payment using the gateway provider
     /// </summary>

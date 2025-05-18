@@ -16,12 +16,14 @@ public class PaystackGateway : IPaymentGateway
     private readonly ILogger<PaystackGateway> _logger;
     private readonly string _baseUrl = "https://api.paystack.co";
 
+    public PaymentGatewayType GatewayType => PaymentGatewayType.Paystack;
+
     public PaystackGateway(PaymentGatewayConfig config, ILogger<PaystackGateway> logger)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        if (string.IsNullOrEmpty(_config.SecretKey))
+        if (string.IsNullOrEmpty(_config.Paystack.SecretKey))
         {
             throw new InvalidOperationException("Paystack secret key is required");
         }
@@ -29,7 +31,7 @@ public class PaystackGateway : IPaymentGateway
         _httpClient = new HttpClient();
         _httpClient.BaseAddress = new Uri(_baseUrl);
         _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _config.SecretKey);
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _config.Paystack.SecretKey);
     }
 
     public async Task<PaymentResponse> CreatePaymentAsync(PaymentRequest request)
