@@ -6,18 +6,12 @@ using PayBridge.SDK.Domain.Enums;
 using PayBridge.SDK.Infrastructure.Persistence;
 
 namespace PayBridge.SDK.Infrastructure.Repositories;
-public class TransactionRepository : ITransactionRepository
+public class TransactionRepository(PayBridgeDbContext dbContext, ILogger<TransactionRepository> logger) : ITransactionRepository
 {
-    private readonly PayBridgeDbContext _dbContext;
-    private readonly ILogger<TransactionRepository> _logger;
+    private readonly PayBridgeDbContext _dbContext = dbContext;
+    private readonly ILogger<TransactionRepository> _logger = logger;
 
-    public TransactionRepository(PayBridgeDbContext dbContext, ILogger<TransactionRepository> logger)
-    {
-        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
-
-    /// <inheritdoc/>
+        /// <inheritdoc/>
     public async Task<PaymentTransaction> CreateAsync(PaymentTransaction transaction)
     {
         if (transaction == null)

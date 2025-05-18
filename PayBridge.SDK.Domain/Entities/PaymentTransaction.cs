@@ -1,6 +1,4 @@
 ﻿using PayBridge.SDK.Domain.Enums;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PayBridge.SDK.Domain.Entities;
 public class PaymentTransaction

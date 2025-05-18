@@ -71,7 +71,7 @@ public class PaymentService : IPaymentService
                     Status = response.Status,
                     Gateway = selectedGateway,
                     GatewayResponse = JsonSerializer.Serialize(response.GatewayResponse),
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow                    
                 });
             }
 
