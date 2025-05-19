@@ -6,6 +6,7 @@ using PayBridge.SDK.Application.Interfaces;
 using PayBridge.SDK.Domain.Enums;
 
 namespace PayBridge.SDK.Presentation.Controllers;
+
 [Route("api/[controller]")]
 [ApiController]
 public class PaymentController : ControllerBase

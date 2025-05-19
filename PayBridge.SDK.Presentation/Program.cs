@@ -25,6 +25,7 @@ builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IPaymentGateway, FlutterwaveGateway>();
+builder.Services.AddScoped<IPaymentGateway, PaystackGateway>();
 //builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddPayBridge(config =>
 {

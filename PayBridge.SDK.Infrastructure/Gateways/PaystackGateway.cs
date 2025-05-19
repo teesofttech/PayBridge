@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using PayBridge.SDK.Application.Dtos;
 using PayBridge.SDK.Application.Dtos.Request;
 using PayBridge.SDK.Application.Dtos.Response;
@@ -18,9 +19,9 @@ public class PaystackGateway : IPaymentGateway
 
     public PaymentGatewayType GatewayType => PaymentGatewayType.Paystack;
 
-    public PaystackGateway(PaymentGatewayConfig config, ILogger<PaystackGateway> logger)
+    public PaystackGateway(IOptions<PaymentGatewayConfig> config, ILogger<PaystackGateway> logger)
     {
-        _config = config ?? throw new ArgumentNullException(nameof(config));
+        _config = config.Value;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         if (string.IsNullOrEmpty(_config.Paystack.SecretKey))

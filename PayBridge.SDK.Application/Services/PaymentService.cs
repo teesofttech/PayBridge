@@ -21,7 +21,7 @@ public class PaymentService : IPaymentService
 
     public PaymentService(
         ITransactionRepository transactionRepository,
-         IEnumerable<IPaymentGateway> gateways,  // Inject all gateways directly
+        IEnumerable<IPaymentGateway> gateways,  // Inject all gateways directly
         ILogger<PaymentService> logger,
         PaymentGatewayConfig config)
     {
