@@ -81,10 +81,10 @@ public static class IServiceCollectionExtensions
         }
 
         services.AddOptions<PaymentGatewayConfig>()
-                       .Configure<IConfiguration>((settings, configuration) =>
-                       {
-                           configuration.GetSection("PaymentGatewayConfig").Bind(settings);
-                       });
+            .Configure<IConfiguration>((settings, configuration) =>
+            {
+                configuration.GetSection("PaymentGatewayConfig").Bind(settings);
+            });
 
 
         // Configure the SDK

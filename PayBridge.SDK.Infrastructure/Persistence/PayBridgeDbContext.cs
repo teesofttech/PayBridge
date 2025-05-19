@@ -9,4 +9,5 @@ public class PayBridgeDbContext : DbContext
         : base(options) { }
 
     public DbSet<PaymentTransaction> Transactions { get; set; }
+    public DbSet<RefundTransaction> Refunds { get; set; }   
 }
