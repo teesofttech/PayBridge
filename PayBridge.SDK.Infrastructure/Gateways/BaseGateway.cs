@@ -24,7 +24,6 @@ internal abstract class BaseGateway : IPaymentGateway
     public abstract Task<PaymentResponse> CreatePaymentAsync(PaymentRequest request);
     public abstract Task<VerificationResponse> VerifyPaymentAsync(string transactionReference);
     public abstract Task<RefundResponse> RefundPaymentAsync(RefundRequest request);
-    public abstract Task<PaymentMethodResponse> SavePaymentMethodAsync(PaymentMethodRequest request);
 
     protected string GenerateTransactionReference(string prefix)
     {

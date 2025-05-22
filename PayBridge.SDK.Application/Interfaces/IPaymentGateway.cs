@@ -27,11 +27,4 @@ public interface IPaymentGateway
     /// <param name="request">Refund request details</param>
     /// <returns>Response containing refund status</returns>
     Task<RefundResponse> RefundPaymentAsync(RefundRequest request);
-
-    /// <summary>
-    /// Saves a payment method for future use
-    /// </summary>
-    /// <param name="request">Payment method details</param>
-    /// <returns>Response containing saved payment method details</returns>
-    Task<PaymentMethodResponse> SavePaymentMethodAsync(PaymentMethodRequest request);
 }

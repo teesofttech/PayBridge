@@ -15,5 +15,9 @@ public class VerificationResponse
     public string Currency { get; set; }
     public PaymentStatus Status { get; set; }
     public DateTime PaymentDate { get; set; }
+    public decimal Fee { get; set; }
+    public string PaymentMethod { get; set; }
+    public decimal? AmountSettled { get; set; }
+    public Dictionary<string, string> Metadata { get; set; } = new Dictionary<string, string>();    
     public Dictionary<string, string> GatewayResponse { get; set; } = new Dictionary<string, string>();
 }

@@ -73,22 +73,22 @@ public class PaymentController : ControllerBase
     /// </summary>
     /// <param name="reference">Transaction reference</param>
     /// <returns>Payment verification response</returns>
-    [HttpGet("{reference}")]
+    [HttpGet]
     [ProducesResponseType(typeof(VerificationResponse), 200)]
     [ProducesResponseType(typeof(ErrorResponse), 400)]
     [ProducesResponseType(typeof(ErrorResponse), 500)]
-    public async Task<IActionResult> VerifyPayment([FromQuery] string reference)
+    public async Task<IActionResult> VerifyPayment([FromQuery] VerifyRequest verifyRequest)
     {
         try
         {
-            _logger.LogInformation("Verifying payment: {Reference}", reference);
+            _logger.LogInformation("Verifying payment: {Reference}", verifyRequest.Reference);
 
-            var response = await _paymentService.VerifyPaymentAsync(reference);
+            var response = await _paymentService.VerifyPaymentAsync(verifyRequest.Reference);
 
             if (response.Success)
             {
                 _logger.LogInformation("Payment verification successful: {Reference}, Status: {Status}",
-                    reference, response.Status);
+                    verifyRequest.Reference, response.Status);
                 return Ok(response);
             }
             else
@@ -103,7 +103,7 @@ public class PaymentController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error verifying payment: {Reference}", reference);
+            _logger.LogError(ex, "Error verifying payment: {Reference}", verifyRequest.Reference);
             return StatusCode(500, new ErrorResponse
             {
                 Message = "An error occurred while verifying the payment",
@@ -150,75 +150,6 @@ public class PaymentController : ControllerBase
             return StatusCode(500, new ErrorResponse
             {
                 Message = "An error occurred while processing the refund",
-                ErrorCode = "INTERNAL_ERROR"
-            });
-        }
-    }
-
-    /// <summary>
-    /// Saves a payment method for future use
-    /// </summary>
-    /// <param name="request">Payment method details</param>
-    /// <returns>Saved payment method details</returns>
-    [HttpPost("payment-methods")]
-    [ProducesResponseType(typeof(PaymentMethodResponse), 200)]
-    [ProducesResponseType(typeof(ErrorResponse), 400)]
-    [ProducesResponseType(typeof(ErrorResponse), 500)]
-    public async Task<IActionResult> SavePaymentMethod([FromBody] SavePaymentMethodRequest request)
-    {
-        try
-        {
-            if (request.Gateway == PaymentGatewayType.Automatic)
-            {
-                return BadRequest(new ErrorResponse
-                {
-                    Message = "A specific gateway must be specified for saving payment methods",
-                    ErrorCode = "INVALID_GATEWAY"
-                });
-            }
-
-            _logger.LogInformation("Saving payment method for customer: {Email}", request.CustomerEmail);
-
-            var paymentMethodRequest = new PaymentMethodRequest
-            {
-                CustomerEmail = request.CustomerEmail,
-                CustomerName = request.CustomerName,
-                Token = request.Token,
-                Type = request.Type,
-                IsDefault = request.IsDefault
-            };
-
-            var response = await _paymentService.SavePaymentMethodAsync(paymentMethodRequest, request.Gateway);
-
-            if (response.Success)
-            {
-                _logger.LogInformation("Payment method saved successfully: {Id}", response.PaymentMethodId);
-                return Ok(response);
-            }
-            else
-            {
-                _logger.LogWarning("Payment method saving failed: {Message}", response.Message);
-                return BadRequest(new ErrorResponse
-                {
-                    Message = response.Message,
-                    ErrorCode = "SAVE_PAYMENT_METHOD_FAILED"
-                });
-            }
-        }
-        catch (NotImplementedException)
-        {
-            return BadRequest(new ErrorResponse
-            {
-                Message = "This payment gateway does not support saving payment methods",
-                ErrorCode = "NOT_SUPPORTED"
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error saving payment method");
-            return StatusCode(500, new ErrorResponse
-            {
-                Message = "An error occurred while saving the payment method",
                 ErrorCode = "INTERNAL_ERROR"
             });
         }
@@ -296,26 +227,35 @@ public class PaymentController : ControllerBase
     /// Each gateway sends notifications in different formats, so we need to
     /// detect the gateway from the notification format.
     /// </remarks>
-    [HttpPost("redirect")]
+    [HttpGet("verify-transaction")]
     [ProducesResponseType(200)]
     [ProducesResponseType(400)]
-    public async Task<IActionResult> Redirect([FromQuery] object webhookData)
+    public async Task<IActionResult> VerifyTransaction()
     {
         try
         {
-            _logger.LogInformation("Received webhook notification: {Data}", webhookData);
+            var queryParams = HttpContext.Request.Query;
 
-            // Determine which gateway sent the webhook
-            PaymentGatewayType gateway = DetectGatewayFromWebhook(webhookData);
-            string reference = ExtractReferenceFromWebhook(webhookData, gateway);
+            var allParams = new Dictionary<string, string>();
+            foreach (var param in queryParams)
+            {
+                if (param.Key.Contains("reference", StringComparison.OrdinalIgnoreCase) ||
+                    param.Key.Contains("tx_ref", StringComparison.OrdinalIgnoreCase))
+                {
+                    allParams["reference"] = param.Value!;
+                }
+            }
+
+            PaymentGatewayType gateway = DetectGatewayFromWebhook(allParams.Values);
+            string reference = allParams.Values.FirstOrDefault()!.ToString()!;
 
             if (string.IsNullOrEmpty(reference))
             {
-                _logger.LogWarning("Could not extract transaction reference from webhook");
+                _logger.LogWarning("Could not extract transaction reference from Query");
                 return BadRequest(new ErrorResponse
                 {
-                    Message = "Could not extract transaction reference from webhook",
-                    ErrorCode = "INVALID_WEBHOOK"
+                    Message = "Could not extract transaction reference from Query",
+                    ErrorCode = "INVALID_REQUEST"
                 });
             }
 
@@ -324,29 +264,27 @@ public class PaymentController : ControllerBase
 
             if (response.Success)
             {
-                _logger.LogInformation("Webhook verification successful: {Reference}, Status: {Status}",
+                _logger.LogInformation("Query verification successful: {Reference}, Status: {Status}",
                     reference, response.Status);
 
-                // TODO: Update order status or trigger other business logic based on payment status
-
-                return Ok(new { success = true });
+                return Ok(new { success = true, response });
             }
             else
             {
-                _logger.LogWarning("Webhook verification failed: {Message}", response.Message);
+                _logger.LogWarning("Query verification failed: {Message}", response.Message);
                 return BadRequest(new ErrorResponse
                 {
                     Message = response.Message,
-                    ErrorCode = "WEBHOOK_VERIFICATION_FAILED"
+                    ErrorCode = "QUERY_VERIFICATION_FAILED"
                 });
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing webhook");
+            _logger.LogError(ex, "Error processing Query");
             return StatusCode(500, new ErrorResponse
             {
-                Message = "An error occurred while processing the webhook",
+                Message = "An error occurred while processing the Query",
                 ErrorCode = "INTERNAL_ERROR"
             });
         }
@@ -477,6 +415,16 @@ public class PaymentController : ControllerBase
         {
             return null;
         }
+    }
+
+    private string GetKeyAndValue(object data, string key)
+    {
+        var dict = (IDictionary<string, object>)data;
+        if (dict.ContainsKey(key))
+        {
+            return dict[key].ToString();
+        }
+        return null;
     }
 }
 

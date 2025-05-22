@@ -137,8 +137,7 @@ public class PaystackGateway : IPaymentGateway
             {
                 var data = root.GetProperty("data");
 
-                // Determine payment status based on Paystack response
-                var statusStr = data.GetProperty("status").GetString().ToLower();
+                var statusStr = data.GetProperty("status").GetString()!.ToLower()!;
                 var paymentStatus = statusStr switch
                 {
                     "success" => PaymentStatus.Successful,
@@ -153,16 +152,23 @@ public class PaystackGateway : IPaymentGateway
                     TransactionReference = transactionReference,
                     Message = "Payment verification successful",
                     Status = paymentStatus,
-                    Amount = data.GetProperty("amount").GetDecimal() / 100, // Convert back from kobo
+                    Amount = data.GetProperty("amount").GetDecimal() / 100,
+                    AmountSettled = data.GetProperty("amount").GetDecimal() / 100,
                     Currency = data.GetProperty("currency").GetString(),
                     PaymentDate = data.TryGetProperty("paid_at", out var paidAt) && !string.IsNullOrEmpty(paidAt.GetString())
                         ? DateTime.Parse(paidAt.GetString())
                         : DateTime.UtcNow,
                     GatewayResponse = new Dictionary<string, string>
-                        {
-                            { "channel", data.GetProperty("channel").GetString() },
-                            { "gateway_response", data.GetProperty("gateway_response").GetString() }
-                        }
+                    {
+                        { "channel", data.GetProperty("channel").GetString() },
+                        { "gateway_response", data.GetProperty("gateway_response").GetString() },
+                    },
+                    PaymentMethod = data.GetProperty("channel").GetString(),
+                    Fee = data.TryGetProperty("fees", out var fee) ? fee.GetDecimal() / 100 : 0,
+                    Metadata = data.TryGetProperty("metadata", out var meta) && meta.TryGetProperty("additional_info", out var additionalInfo)
+                        ? JsonSerializer.Deserialize<Dictionary<string, string>>(additionalInfo.GetRawText())!
+                        : new Dictionary<string, string>()
+
                 };
             }
             else
@@ -255,9 +261,4 @@ public class PaystackGateway : IPaymentGateway
         }
     }
 
-    public Task<PaymentMethodResponse> SavePaymentMethodAsync(PaymentMethodRequest request)
-    {
-        _logger.LogWarning("SavePaymentMethod not implemented for Paystack");
-        throw new NotImplementedException("Paystack doesn't support direct card saving. Use a transaction with authorization instead.");
-    }
 }

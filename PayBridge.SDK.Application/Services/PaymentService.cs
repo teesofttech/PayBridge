@@ -17,7 +17,6 @@ public class PaymentService : IPaymentService
     private readonly Dictionary<PaymentGatewayType, IPaymentGateway> _gateways;
     private readonly ILogger<PaymentService> _logger;
     private readonly PaymentGatewayConfig _config;
-   
 
     public PaymentService(
         ITransactionRepository transactionRepository,
@@ -30,7 +29,7 @@ public class PaymentService : IPaymentService
         _config = config ?? throw new ArgumentNullException(nameof(config));
 
         _gateways = gateways.ToDictionary(g => g.GatewayType);
-      
+
     }
 
     public async Task<PaymentResponse> CreatePaymentAsync(PaymentRequest request, PaymentGatewayType gateway = PaymentGatewayType.Automatic)
@@ -71,7 +70,7 @@ public class PaymentService : IPaymentService
                     Status = response.Status,
                     Gateway = selectedGateway,
                     GatewayResponse = JsonSerializer.Serialize(response.GatewayResponse),
-                    CreatedAt = DateTime.UtcNow                    
+                    CreatedAt = DateTime.UtcNow
                 });
             }
 
@@ -225,59 +224,6 @@ public class PaymentService : IPaymentService
         }
     }
 
-    public async Task<PaymentMethodResponse> SavePaymentMethodAsync(PaymentMethodRequest request, PaymentGatewayType gateway)
-    {
-        if (request == null)
-        {
-            throw new ArgumentNullException(nameof(request));
-        }
-
-        if (string.IsNullOrEmpty(request.CustomerEmail))
-        {
-            throw new ArgumentException("Customer email is required", nameof(request));
-        }
-
-        if (string.IsNullOrEmpty(request.Token))
-        {
-            throw new ArgumentException("Payment method token is required", nameof(request));
-        }
-
-        if (gateway == PaymentGatewayType.Automatic)
-        {
-            throw new ArgumentException("A specific gateway must be specified for saving payment methods", nameof(gateway));
-        }
-
-        _logger.LogInformation("Saving payment method for customer {Email} using {Gateway} gateway",
-            request.CustomerEmail, gateway);
-
-        if (!_gateways.ContainsKey(gateway))
-        {
-            _logger.LogError("Gateway {Gateway} is not configured", gateway);
-            throw new PaymentGatewayException($"Gateway {gateway} is not configured");
-        }
-
-        try
-        {
-            var response = await _gateways[gateway].SavePaymentMethodAsync(request);
-
-            _logger.LogInformation("Payment method saving {Status} for customer {Email}",
-                response.Success ? "successful" : "failed", request.CustomerEmail);
-
-            // TODO: Save payment method to repository if implemented
-
-            return response;
-        }
-        catch (NotImplementedException)
-        {
-            _logger.LogWarning("Saving payment methods not supported by {Gateway}", gateway);
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Saving payment method failed with {Gateway}", gateway);
-            throw new PaymentGatewayException($"Saving payment method failed with {gateway}", ex);
-        }
-    }
 
     private PaymentGatewayType SelectBestGateway(PaymentRequest request)
     {
