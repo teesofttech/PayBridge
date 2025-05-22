@@ -96,6 +96,9 @@ public static class IServiceCollectionExtensions
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
         services.AddScoped<PaymentGatewayFactory>();
+        services.AddScoped<IPaymentService, PaymentService>();
+        services.AddScoped<IPaymentGateway, FlutterwaveGateway>();
+        services.AddScoped<IPaymentGateway, PaystackGateway>();
 
         // Register gateways
         RegisterGateways(services, config);

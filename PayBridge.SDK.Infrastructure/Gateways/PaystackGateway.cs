@@ -52,9 +52,14 @@ public class PaystackGateway : IPaymentGateway
                 {
                     custom_fields = new[]
                     {
-                            new { display_name = "Customer Name", variable_name = "customer_name", value = request.CustomerName },
-                            new { display_name = "Customer Phone", variable_name = "customer_phone", value = request.CustomerPhone }
+                        new {
+
+                            display_name = "Customer Name", variable_name = "customer_name", value = request.CustomerName
                         },
+                        new {
+                            display_name = "Customer Phone", variable_name = "customer_phone", value = request.CustomerPhone
+                        }
+                    },
                     additional_info = request.Metadata
                 },
                 reference = $"PS_{Guid.NewGuid().ToString("N")}"
@@ -86,9 +91,9 @@ public class PaystackGateway : IPaymentGateway
                     Status = PaymentStatus.Pending,
                     CheckoutUrl = data.GetProperty("authorization_url").GetString(),
                     GatewayResponse = new Dictionary<string, string>
-                        {
-                            { "access_code", data.GetProperty("access_code").GetString() }
-                        }
+                    {
+                        { "access_code", data.GetProperty("access_code").GetString() }
+                    }
                 };
             }
             else
