@@ -1,8 +1,5 @@
-using PayBridge.SDK.Application.Interfaces;
-using PayBridge.SDK.Application.Services;
 using PayBridge.SDK.Domain.Enums;
 using PayBridge.SDK.Infrastructure.Externsions;
-using PayBridge.SDK.Infrastructure.Gateways;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);

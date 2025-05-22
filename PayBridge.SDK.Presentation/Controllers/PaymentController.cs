@@ -77,7 +77,7 @@ public class PaymentController : ControllerBase
     [ProducesResponseType(typeof(VerificationResponse), 200)]
     [ProducesResponseType(typeof(ErrorResponse), 400)]
     [ProducesResponseType(typeof(ErrorResponse), 500)]
-    public async Task<IActionResult> VerifyPayment(string reference)
+    public async Task<IActionResult> VerifyPayment([FromQuery] string reference)
     {
         try
         {
@@ -287,6 +287,71 @@ public class PaymentController : ControllerBase
             });
         }
     }
+
+    /// <summary>
+    /// Handles payment webhook notifications
+    /// </summary>
+    /// <remarks>
+    /// This endpoint processes webhook notifications from payment gateways.
+    /// Each gateway sends notifications in different formats, so we need to
+    /// detect the gateway from the notification format.
+    /// </remarks>
+    [HttpPost("redirect")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(400)]
+    public async Task<IActionResult> Redirect([FromQuery] object webhookData)
+    {
+        try
+        {
+            _logger.LogInformation("Received webhook notification: {Data}", webhookData);
+
+            // Determine which gateway sent the webhook
+            PaymentGatewayType gateway = DetectGatewayFromWebhook(webhookData);
+            string reference = ExtractReferenceFromWebhook(webhookData, gateway);
+
+            if (string.IsNullOrEmpty(reference))
+            {
+                _logger.LogWarning("Could not extract transaction reference from webhook");
+                return BadRequest(new ErrorResponse
+                {
+                    Message = "Could not extract transaction reference from webhook",
+                    ErrorCode = "INVALID_WEBHOOK"
+                });
+            }
+
+            // Verify the payment status
+            var response = await _paymentService.VerifyPaymentAsync(reference, gateway);
+
+            if (response.Success)
+            {
+                _logger.LogInformation("Webhook verification successful: {Reference}, Status: {Status}",
+                    reference, response.Status);
+
+                // TODO: Update order status or trigger other business logic based on payment status
+
+                return Ok(new { success = true });
+            }
+            else
+            {
+                _logger.LogWarning("Webhook verification failed: {Message}", response.Message);
+                return BadRequest(new ErrorResponse
+                {
+                    Message = response.Message,
+                    ErrorCode = "WEBHOOK_VERIFICATION_FAILED"
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing webhook");
+            return StatusCode(500, new ErrorResponse
+            {
+                Message = "An error occurred while processing the webhook",
+                ErrorCode = "INTERNAL_ERROR"
+            });
+        }
+    }
+
 
     /// <summary>
     /// Maps the API request DTO to the internal payment request
