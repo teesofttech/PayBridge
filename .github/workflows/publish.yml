@@ -3,7 +3,7 @@ name: Publish PayBridge.SDK NuGet Package
 on:
   push:
     tags:
-      - 'v*.*.*' # Runs only when a version tag is pushed
+      - 'v*.*.*' # Trigger only on version tags like v1.0.0
 
 jobs:
   build-and-publish:
@@ -18,20 +18,29 @@ jobs:
         with:
           dotnet-version: '8.x'
 
-      - name: 🔄 Restore SDK project dependencies
+      - name: 🧪 Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: 🔄 Restore dependencies
         run: dotnet restore ./PayBridge.SDK/PayBridge.SDK.csproj
 
-      - name: 🛠️ Build SDK project
-        run: dotnet build ./PayBridge.SDK/PayBridge.SDK.csproj --configuration Release --no-restore
+      - name: 🛠️ Build with dynamic version
+        run: dotnet build ./PayBridge.SDK/PayBridge.SDK.csproj --configuration Release --no-restore -p:Version=${{ steps.version.outputs.version }}
 
-      - name: 📦 Pack SDK project
-        run: dotnet pack ./PayBridge.SDK/PayBridge.SDK.csproj --configuration Release --no-build --output ./nupkgs
-
-      - name: 🔐 Add GitHub Package Source
-        run: dotnet nuget add source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" --name github --username ${{ github.actor }} --password ${{ secrets.GH_PACKAGES_TOKEN }} --store-password-in-clear-text
+      - name: 📦 Pack with dynamic version
+        run: dotnet pack ./PayBridge.SDK/PayBridge.SDK.csproj --configuration Release --no-build --output ./nupkgs -p:Version=${{ steps.version.outputs.version }}
 
       - name: 🚀 Push to GitHub Packages
-        run: dotnet nuget push ./nupkgs/*.nupkg --api-key ${{ secrets.GH_PACKAGES_TOKEN }} --source "github"
+        run: |
+          dotnet nuget push ./nupkgs/*.nupkg \
+            --api-key ${{ secrets.GH_PACKAGES_TOKEN }} \
+            --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
 
       - name: 🚀 Push to NuGet.org
-        run: dotnet nuget push ./nupkgs/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+        run: |
+          dotnet nuget push ./nupkgs/*.nupkg \
+            --api-key ${{ secrets.NUGET_API_KEY }} \
+            --source "https://api.nuget.org/v3/index.json"
