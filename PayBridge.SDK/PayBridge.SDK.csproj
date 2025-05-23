@@ -4,6 +4,12 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	<PackageId>PayBridge.SDK</PackageId>
+	<Version>1.0.0</Version>
+	<Authors>Babatunde Esanju</Authors>
+	<Company>Teesoftech</Company>
+	<PackageDescription>Seamlessly integrate multiple payment gateways into your ASP.NET Core applications.</PackageDescription>
+	<RepositoryUrl>https://github.com/teesofttech/PayBridge</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
