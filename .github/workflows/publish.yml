@@ -1,9 +1,9 @@
-name: Publish NuGet Package
+name: Publish PayBridge.SDK NuGet Package
 
 on:
   push:
     tags:
-      - 'v*.*.*' # Trigger only on version tags (e.g., v1.0.0)
+      - 'v*.*.*' # Only run on version tags like v1.0.0
 
 jobs:
   build-and-publish:
@@ -18,14 +18,14 @@ jobs:
         with:
           dotnet-version: '8.x'
 
-      - name: 🔄 Restore dependencies
-        run: dotnet restore
+      - name: 🔄 Restore SDK project dependencies
+        run: dotnet restore ./PayBridge.SDK/PayBridge.SDK.csproj
 
-      - name: 🛠️ Build
-        run: dotnet build --configuration Release --no-restore
+      - name: 🛠️ Build only SDK project
+        run: dotnet build ./PayBridge.SDK/PayBridge.SDK.csproj --configuration Release --no-restore
 
-      - name: 📦 Pack NuGet package
-        run: dotnet pack --configuration Release --no-build --output ./nupkgs
+      - name: 📦 Pack SDK project
+        run: dotnet pack ./PayBridge.SDK/PayBridge.SDK.csproj --configuration Release --no-build --output ./nupkgs
 
       - name: 🚀 Push to NuGet.org
         run: dotnet nuget push ./nupkgs/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
