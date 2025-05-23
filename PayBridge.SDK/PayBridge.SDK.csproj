@@ -5,7 +5,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	<PackageId>PayBridge.SDK</PackageId>
-	<Version>1.0.1</Version>
 	<Authors>Babatunde Esanju</Authors>
 	<Company>Teesoftech</Company>
 	<PackageDescription>Seamlessly integrate multiple payment gateways into your ASP.NET Core applications.</PackageDescription>
