@@ -37,7 +37,7 @@
 
 ### Prerequisites
 
-- [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - Database system (e.g., SQL Server, PostgreSQL)
 
 ### Installation
