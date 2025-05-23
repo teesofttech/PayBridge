@@ -3,7 +3,7 @@ name: Publish PayBridge.SDK NuGet Package
 on:
   push:
     tags:
-      - 'v*.*.*' # Only run on version tags like v1.0.0
+      - 'v*.*.*' # Runs only when a version tag is pushed
 
 jobs:
   build-and-publish:
@@ -21,11 +21,17 @@ jobs:
       - name: 🔄 Restore SDK project dependencies
         run: dotnet restore ./PayBridge.SDK/PayBridge.SDK.csproj
 
-      - name: 🛠️ Build only SDK project
+      - name: 🛠️ Build SDK project
         run: dotnet build ./PayBridge.SDK/PayBridge.SDK.csproj --configuration Release --no-restore
 
       - name: 📦 Pack SDK project
         run: dotnet pack ./PayBridge.SDK/PayBridge.SDK.csproj --configuration Release --no-build --output ./nupkgs
+
+      - name: 🔐 Add GitHub Package Source
+        run: dotnet nuget add source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" --name github --username ${{ github.actor }} --password ${{ secrets.GH_PACKAGES_TOKEN }} --store-password-in-clear-text
+
+      - name: 🚀 Push to GitHub Packages
+        run: dotnet nuget push ./nupkgs/*.nupkg --api-key ${{ secrets.GH_PACKAGES_TOKEN }} --source "github"
 
       - name: 🚀 Push to NuGet.org
         run: dotnet nuget push ./nupkgs/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
