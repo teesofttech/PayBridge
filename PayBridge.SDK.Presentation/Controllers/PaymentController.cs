@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PayBridge.SDK.Application.Dtos.Request;
-using PayBridge.SDK.Application.Dtos.Response;
-using PayBridge.SDK.Application.Interfaces;
-using PayBridge.SDK.Domain.Enums;
+using PayBridge.SDK.Dtos.Request;
+using PayBridge.SDK.Dtos.Response;
+using PayBridge.SDK.Enums;
+using PayBridge.SDK.Interfaces;
+
 
 namespace PayBridge.SDK.Presentation.Controllers;
 

@@ -3,17 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.12.35707.178
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PayBridge.SDK.Application", "PayBridge.SDK.Application\PayBridge.SDK.Application.csproj", "{0E529923-BBD6-4903-9D06-9F0A697F4A4C}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{93DC2AF4-55CF-403E-96B0-8B3B9D581508}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PayBridge.SDK.Domain", "PayBridge.SDK.Domain\PayBridge.SDK.Domain.csproj", "{0D8F7CCB-87DC-4720-A65F-0A2F8A374808}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PayBridge.SDK.Infrastructure", "PayBridge.SDK.Infrastructure\PayBridge.SDK.Infrastructure.csproj", "{992146A8-08D0-4BD6-BFEE-E1A704EFB715}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PayBridge.SDK.Presentation", "PayBridge.SDK.Presentation\PayBridge.SDK.Presentation.csproj", "{DCBC918C-905A-4B87-A382-7188B2C8BCCD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PayBridge.SDK.Test", "PayBridge.SDK.Test\PayBridge.SDK.Test.csproj", "{60646006-90BC-4FB0-A6CE-DF7FE49A9690}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PayBridge.SDK", "PayBridge.SDK\PayBridge.SDK.csproj", "{BE984BAE-2D8C-48D2-A7BF-7391706D11CE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,18 +17,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{0E529923-BBD6-4903-9D06-9F0A697F4A4C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0E529923-BBD6-4903-9D06-9F0A697F4A4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0E529923-BBD6-4903-9D06-9F0A697F4A4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0E529923-BBD6-4903-9D06-9F0A697F4A4C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0D8F7CCB-87DC-4720-A65F-0A2F8A374808}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0D8F7CCB-87DC-4720-A65F-0A2F8A374808}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0D8F7CCB-87DC-4720-A65F-0A2F8A374808}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0D8F7CCB-87DC-4720-A65F-0A2F8A374808}.Release|Any CPU.Build.0 = Release|Any CPU
-		{992146A8-08D0-4BD6-BFEE-E1A704EFB715}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{992146A8-08D0-4BD6-BFEE-E1A704EFB715}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{992146A8-08D0-4BD6-BFEE-E1A704EFB715}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{992146A8-08D0-4BD6-BFEE-E1A704EFB715}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DCBC918C-905A-4B87-A382-7188B2C8BCCD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DCBC918C-905A-4B87-A382-7188B2C8BCCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DCBC918C-905A-4B87-A382-7188B2C8BCCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -41,15 +25,20 @@ Global
 		{60646006-90BC-4FB0-A6CE-DF7FE49A9690}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{60646006-90BC-4FB0-A6CE-DF7FE49A9690}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{60646006-90BC-4FB0-A6CE-DF7FE49A9690}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE984BAE-2D8C-48D2-A7BF-7391706D11CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE984BAE-2D8C-48D2-A7BF-7391706D11CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE984BAE-2D8C-48D2-A7BF-7391706D11CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE984BAE-2D8C-48D2-A7BF-7391706D11CE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{0E529923-BBD6-4903-9D06-9F0A697F4A4C} = {93DC2AF4-55CF-403E-96B0-8B3B9D581508}
-		{0D8F7CCB-87DC-4720-A65F-0A2F8A374808} = {93DC2AF4-55CF-403E-96B0-8B3B9D581508}
-		{992146A8-08D0-4BD6-BFEE-E1A704EFB715} = {93DC2AF4-55CF-403E-96B0-8B3B9D581508}
 		{DCBC918C-905A-4B87-A382-7188B2C8BCCD} = {93DC2AF4-55CF-403E-96B0-8B3B9D581508}
 		{60646006-90BC-4FB0-A6CE-DF7FE49A9690} = {93DC2AF4-55CF-403E-96B0-8B3B9D581508}
+		{BE984BAE-2D8C-48D2-A7BF-7391706D11CE} = {93DC2AF4-55CF-403E-96B0-8B3B9D581508}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F670CCA0-8700-48C0-A101-7BC449067E01}
 	EndGlobalSection
 EndGlobal

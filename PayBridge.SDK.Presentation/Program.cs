@@ -1,5 +1,5 @@
-using PayBridge.SDK.Domain.Enums;
-using PayBridge.SDK.Infrastructure.Externsions;
+using PayBridge.SDK;
+using PayBridge.SDK.Enums;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,7 +15,7 @@ builder.Logging.ClearProviders();
 builder.Logging.AddSerilog(logger);
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+//builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 builder.Services.AddDBRepository(builder.Configuration, "MSSQL");
 builder.Services.AddControllers();
@@ -37,7 +37,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    app.MapOpenApi();
+    //app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();
