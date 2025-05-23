@@ -9,7 +9,12 @@
 	<Authors>Babatunde Esanju</Authors>
 	<Company>Teesoftech</Company>
 	<PackageDescription>Seamlessly integrate multiple payment gateways into your ASP.NET Core applications.</PackageDescription>
+	<Description>Seamlessly integrate multiple payment gateways into your ASP.NET Core applications.</Description>
+	<PackageTags>payments; aspnetcore; fintech; sdk; paybridge</PackageTags>
 	<RepositoryUrl>https://github.com/teesofttech/PayBridge</RepositoryUrl>
+	<RepositoryType>git</RepositoryType>
+	<PackageLicenseExpression>MIT</PackageLicenseExpression>
+	<PackageProjectUrl>https://github.com/teesofttech/PayBridge</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>
