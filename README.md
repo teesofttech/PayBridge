@@ -54,9 +54,10 @@ cd PayBridge
 Edit `appsettings.json`:
 
 ```json
-"ConnectionStrings": {
-  "DefaultConnection": "Your_Default_Connection_String"
-}
+"DatabaseProvider": "MSSQL",
+  "ConnectionStrings": {
+    "PayBridgeDbContext": "Data Source=BABATUNDE;Initial Catalog=PayBridgeDB;Integrated Security=True;TrustServerCertificate=true;"
+  }
 ```
 
 ### 📚 Apply Migrations
@@ -82,11 +83,7 @@ Update `appsettings.json`:
 
 ```json
 {  
-  "AllowedHosts": "*",
-  "DatabaseProvider": "MSSQL",
-  "ConnectionStrings": {
-    "PayBridgeDbContext": "Data Source=BABATUNDE;Initial Catalog=PayBridgeDB;Integrated Security=True;TrustServerCertificate=true;"
-  },
+  "AllowedHosts": "*",  
   "PaymentGatewayConfig": {
     "DefaultGateway": "Flutterwave",
     "EnabledGateways": [ "Paystack", "Flutterwave", "Stripe" ],
