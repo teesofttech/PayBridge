@@ -81,23 +81,31 @@ dotnet run
 Update `appsettings.json`:
 
 ```json
-"PaymentGatewayConfig": {
-  "DefaultGateway": "Flutterwave",
-  "EnabledGateways": [ "Paystack", "Flutterwave", "Stripe" ],
-  "Paystack": {
-    "PublicKey": "pk_test_xxxx",
-    "SecretKey": ""
+{  
+  "AllowedHosts": "*",
+  "DatabaseProvider": "MSSQL",
+  "ConnectionStrings": {
+    "PayBridgeDbContext": "Data Source=BABATUNDE;Initial Catalog=PayBridgeDB;Integrated Security=True;TrustServerCertificate=true;"
   },
-  "FlutterwaveConfig": {
-    "PublicKey": "FLWPUBK_TEST--X",
-    "SecretKey": "FLWSECK_TEST--X",
-    "EncryptionKey": "FLWENCK_TEST-xxxx"
-  },
-  "Stripe": {
-    "SecretKey": "sk_test_51Hxxx",
-    "ApiVersion": "2023-10-16"
+  "PaymentGatewayConfig": {
+    "DefaultGateway": "Flutterwave",
+    "EnabledGateways": [ "Paystack", "Flutterwave", "Stripe" ],
+    "Paystack": {
+      "PublicKey": "pk_test_xxxx",
+      "SecretKey": "sk_test_58021058577ab054bfc8175053b96fec8b88585a"
+    },
+    "FlutterwaveConfig": {
+      "PublicKey": "FLWPUBK_TEST-1e0d20b98a0a662d68abd35648c10ec3-X",
+      "SecretKey": "FLWSECK_TEST-ad4dffd9eb56d6c5b05fd394c8b99245-X",
+      "EncryptionKey": "FLWENCK_TEST-xxxx"
+    },
+    "Stripe": {
+      "SecretKey": "sk_test_51Hxxx",
+      "ApiVersion": "2023-10-16"
+    }
   }
 }
+
 ```
 
 > ✅ Ensure `Program.cs` loads configuration correctly from `appsettings.json`.
