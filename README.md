@@ -81,18 +81,21 @@ dotnet run
 Update `appsettings.json`:
 
 ```json
-"PaymentGateways": {
-  "Flutterwave": {
-    "ApiKey": "Your_Flutterwave_Api_Key"
-  },
+"PaymentGatewayConfig": {
+  "DefaultGateway": "Flutterwave",
+  "EnabledGateways": [ "Paystack", "Flutterwave", "Stripe" ],
   "Paystack": {
-    "ApiKey": "Your_Paystack_Api_Key"
+    "PublicKey": "pk_test_xxxx",
+    "SecretKey": ""
   },
-  "Fincra": {
-    "ApiKey": "Your_Fincra_Api_Key"
+  "FlutterwaveConfig": {
+    "PublicKey": "FLWPUBK_TEST--X",
+    "SecretKey": "FLWSECK_TEST--X",
+    "EncryptionKey": "FLWENCK_TEST-xxxx"
   },
   "Stripe": {
-    "ApiKey": "Your_Stripe_Api_Key"
+    "SecretKey": "sk_test_51Hxxx",
+    "ApiVersion": "2023-10-16"
   }
 }
 ```
