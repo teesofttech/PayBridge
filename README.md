@@ -89,11 +89,11 @@ Update `appsettings.json`:
     "EnabledGateways": [ "Paystack", "Flutterwave", "Stripe" ],
     "Paystack": {
       "PublicKey": "pk_test_xxxx",
-      "SecretKey": "sk_test_58021058577ab054bfc8175053b96fec8b88585a"
+      "SecretKey": "sk_test_5802"
     },
     "FlutterwaveConfig": {
-      "PublicKey": "FLWPUBK_TEST-1e0d20b98a0a662d68abd35648c10ec3-X",
-      "SecretKey": "FLWSECK_TEST-ad4dffd9eb56d6c5b05fd394c8b99245-X",
+      "PublicKey": "FLWPUBK_TEST-XXXXXX-X",
+      "SecretKey": "FLWSECK_TEST-XXXXXXXX-X",
       "EncryptionKey": "FLWENCK_TEST-xxxx"
     },
     "Stripe": {
