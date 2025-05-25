@@ -30,29 +30,29 @@ public static class IServiceCollectionExtensions
         }
         else if (provider == providerConfigured)
         {
-            //services.AddDbContext<PayBridgeDbContext>(options =>
-            //{
-            //    options.UseNpgsql(connectionString,
-            //    opt =>
-            //    opt.EnableRetryOnFailure(
-            //       RetryCount,
-            //        TimeSpan.FromSeconds(
-            //            RetryInSeconds),
-            //        null));
-            //}, ServiceLifetime.Scoped);
+            services.AddDbContext<PayBridgeDbContext>(options =>
+            {
+                options.UseNpgsql(connectionString,
+                opt =>
+                opt.EnableRetryOnFailure(
+                   RetryCount,
+                    TimeSpan.FromSeconds(
+                        RetryInSeconds),
+                    null));
+            }, ServiceLifetime.Scoped);
         }
         else if (provider == providerConfigured)
         {
-            //services.AddDbContext<PayBridgeDbContext>(options =>
-            //{
-            //    options.UseMySql(connectionString,
-            //    opt =>
-            //    opt.EnableRetryOnFailure(
-            //       RetryCount,
-            //        TimeSpan.FromSeconds(
-            //            RetryInSeconds),
-            //        null));
-            //}, ServiceLifetime.Scoped);
+            services.AddDbContext<PayBridgeDbContext>(options =>
+            {
+                options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString),
+                opt =>
+                opt.EnableRetryOnFailure(
+                   RetryCount,
+                    TimeSpan.FromSeconds(
+                        RetryInSeconds),
+                    null));
+            }, ServiceLifetime.Scoped);
         }
         else
         {

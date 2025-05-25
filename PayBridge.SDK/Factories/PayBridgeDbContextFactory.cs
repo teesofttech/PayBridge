@@ -18,15 +18,15 @@ public class PayBridgeDbContextFactory : IDesignTimeDbContextFactory<PayBridgeDb
 
         var providerConfigured = config["DatabaseProvider"] ?? "MSSQL";
         if (providerConfigured == "MSSQL")
-            optionsBuilder.UseSqlServer(connectionString, b => b.MigrationsAssembly("PayBridge.SDK.Infrastructure"));
-        //else if (providerConfigured == "PostgreSQL")
-        //    optionsBuilder.UseNpgsql(connectionString, b => b.MigrationsAssembly("PayBridge.SDK.Infrastructure"));
-        //else if (providerConfigured == "MySQL")
-        //    optionsBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString), b => b.MigrationsAssembly("PayBridge.SDK.Infrastructure"));
-        //else if (providerConfigured == "SQLite")
-        //    optionsBuilder.UseSqlite(connectionString, b => b.MigrationsAssembly("PayBridge.SDK.Infrastructure"));
+            optionsBuilder.UseSqlServer(connectionString, b => b.MigrationsAssembly("PayBridge.SDK"));
+        else if (providerConfigured == "PostgreSQL")
+            optionsBuilder.UseNpgsql(connectionString, b => b.MigrationsAssembly("PayBridge.SDK"));
+        else if (providerConfigured == "MySQL")
+            optionsBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString), b => b.MigrationsAssembly("PayBridge.SDK"));
+        else if (providerConfigured == "SQLite")
+            optionsBuilder.UseSqlite(connectionString, b => b.MigrationsAssembly("PayBridge.SDK"));
         else
-            optionsBuilder.UseSqlServer(connectionString, b => b.MigrationsAssembly("PayBridge.SDK.Infrastructure"));
+            optionsBuilder.UseSqlServer(connectionString, b => b.MigrationsAssembly("PayBridge.SDK"));
         return new PayBridgeDbContext(optionsBuilder.Options);
     }
 }
