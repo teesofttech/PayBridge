@@ -17,6 +17,8 @@ builder.Logging.AddSerilog(logger);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 //builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
+
+// Add DB repository based on the configured provider
 builder.Services.AddDBRepository(builder.Configuration, "MSSQL");
 builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();

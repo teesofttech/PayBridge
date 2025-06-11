@@ -11,6 +11,14 @@ public static class IServiceCollectionExtensions
     private const int RetryCount = 3;
     private const double RetryInSeconds = 1.1;
 
+    /// <summary>
+    /// Add DB repository to the service collection based on the specified provider.
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="configuration"></param>
+    /// <param name="provider"></param>
+    /// <returns></returns>
+    /// <exception cref="NotSupportedException"></exception>
     public static IServiceCollection AddDBRepository(this IServiceCollection services, IConfiguration configuration, string provider)
     {
         var connectionString = configuration.GetConnectionString(nameof(PayBridgeDbContext));
@@ -62,6 +70,13 @@ public static class IServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>
+    /// Add PayBridge SDK services to the service collection.
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="configAction"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
     public static IServiceCollection AddPayBridge(this IServiceCollection services, Action<PaymentGatewayConfig> configAction)
     {
         if (services == null)
@@ -101,6 +116,11 @@ public static class IServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>
+    /// Register payment gateways based on the configuration.
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="config"></param>
     private static void RegisterGateways(IServiceCollection services, PaymentGatewayConfig config)
     {
         // If no gateways are explicitly enabled, enable all available ones

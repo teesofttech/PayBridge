@@ -32,6 +32,7 @@ public class PaymentService : IPaymentService
 
     }
 
+    /// <inheritdoc/>
     public async Task<PaymentResponse> CreatePaymentAsync(PaymentRequest request, PaymentGatewayType gateway = PaymentGatewayType.Automatic)
     {
         ValidateRequest(request);
@@ -83,6 +84,7 @@ public class PaymentService : IPaymentService
         }
     }
 
+    /// <inheritdoc/>
     public async Task<VerificationResponse> VerifyPaymentAsync(string transactionReference, PaymentGatewayType gateway = PaymentGatewayType.Automatic)
     {
         if (string.IsNullOrEmpty(transactionReference))
@@ -145,6 +147,7 @@ public class PaymentService : IPaymentService
         }
     }
 
+    /// <inheritdoc/>
     public async Task<RefundResponse> RefundPaymentAsync(RefundRequest request)
     {
         if (request == null)
@@ -224,7 +227,6 @@ public class PaymentService : IPaymentService
         }
     }
 
-
     private PaymentGatewayType SelectBestGateway(PaymentRequest request)
     {
         // Logic to determine best gateway based on various factors
@@ -268,6 +270,8 @@ public class PaymentService : IPaymentService
                 return ChooseAvailableGateway(PaymentGatewayType.Stripe, PaymentGatewayType.Checkout);
         }
     }
+
+    #region [Private Methods]
 
     private PaymentGatewayType ChooseAvailableGateway(params PaymentGatewayType[] preferredGateways)
     {
@@ -344,4 +348,7 @@ public class PaymentService : IPaymentService
             throw new ArgumentException("Customer email is required", nameof(request));
         }
     }
+
+
+    #endregion [Private Methods]
 }
