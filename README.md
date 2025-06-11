@@ -20,6 +20,7 @@
   <a href="#-features">Features</a> •
   <a href="#-getting-started">Getting Started</a> •
   <a href="#-usage">Usage</a> •
+  <a href="#-sample-payloads--responses">Sample Payloads & Responses</a> •
   <a href="#-contributing">Contributing</a> •
   <a href="#-license">License</a>
 </p>
@@ -77,90 +78,155 @@ dotnet run
 
 ## 💡 Usage
 
-### 🧾 Configuring Payment Gateways
+### 💳 Sample Payment Controller
 
-Update `appsettings.json`:
+```csharp
+[Route("api/[controller]")]
+[ApiController]
+public class PaymentController : ControllerBase
+{
+    private readonly IPaymentService _paymentService;
+    private readonly ILogger<PaymentController> _logger;
+
+    public PaymentController(
+        IPaymentService paymentService,
+        ILogger<PaymentController> logger)
+    {
+        _paymentService = paymentService ?? throw new ArgumentNullException(nameof(paymentService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreatePayment([FromBody] CreatePaymentRequest request)
+    {
+        try
+        {
+            _logger.LogInformation("Creating payment for {Amount} {Currency}", request.Amount, request.Currency);
+
+            var paymentRequest = PaymentRequestMapper.MapToPaymentRequest(request);
+            var paymentGateway = request.Gateway ?? PaymentGatewayType.Automatic;
+
+            var response = await _paymentService.CreatePaymentAsync(paymentRequest, paymentGateway);
+
+            if (response.Success)
+            {
+                _logger.LogInformation("Payment created successfully: {Reference}", response.TransactionReference);
+                return Ok(response);
+            }
+            else
+            {
+                _logger.LogWarning("Payment creation failed: {Message}", response.Message);
+                return BadRequest(new ErrorResponse { Message = response.Message, ErrorCode = "PAYMENT_FAILED" });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating payment");
+            return StatusCode(500, new ErrorResponse
+            {
+                Message = "An error occurred while processing your payment",
+                ErrorCode = "INTERNAL_ERROR"
+            });
+        }
+    }
+
+    [HttpGet("verify-transaction")]
+    public async Task<IActionResult> VerifyTransaction()
+    {
+        try
+        {
+            var queryParams = HttpContext.Request.Query;
+            var allParams = new Dictionary<string, string>();
+            foreach (var param in queryParams)
+            {
+                if (param.Key.Contains("reference", StringComparison.OrdinalIgnoreCase) ||
+                    param.Key.Contains("tx_ref", StringComparison.OrdinalIgnoreCase))
+                {
+                    allParams["reference"] = param.Value!;
+                }
+            }
+
+            PaymentGatewayType gateway = GatewayExtractor.DetectGatewayFromWebhook(allParams.Values);
+            string reference = allParams.Values.FirstOrDefault()!.ToString()!;
+
+            if (string.IsNullOrEmpty(reference))
+            {
+                _logger.LogWarning("Could not extract transaction reference from Query");
+                return BadRequest(new ErrorResponse
+                {
+                    Message = "Could not extract transaction reference from Query",
+                    ErrorCode = "INVALID_REQUEST"
+                });
+            }
+
+            var response = await _paymentService.VerifyPaymentAsync(reference, gateway);
+
+            if (response.Success)
+            {
+                _logger.LogInformation("Query verification successful: {Reference}, Status: {Status}",
+                    reference, response.Status);
+                return Ok(new { success = true, response });
+            }
+            else
+            {
+                _logger.LogWarning("Query verification failed: {Message}", response.Message);
+                return BadRequest(new ErrorResponse { Message = response.Message, ErrorCode = "QUERY_VERIFICATION_FAILED" });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing Query");
+            return StatusCode(500, new ErrorResponse
+            {
+                Message = "An error occurred while processing the Query",
+                ErrorCode = "INTERNAL_ERROR"
+            });
+        }
+    }
+}
+```
+
+---
+
+## 📦 Sample Payloads & Responses
+
+### 🔼 Sample Payment Request Payload
 
 ```json
-{  
-  "AllowedHosts": "*",  
-  "PaymentGatewayConfig": {
-    "DefaultGateway": "Flutterwave",
-    "EnabledGateways": [ "Paystack", "Flutterwave", "Stripe" ],
-    "Paystack": {
-      "PublicKey": "pk_test_xxxx",
-      "SecretKey": "sk_test_5802"
-    },
-    "FlutterwaveConfig": {
-      "PublicKey": "FLWPUBK_TEST-XXXXXX-X",
-      "SecretKey": "FLWSECK_TEST-XXXXXXXX-X",
-      "EncryptionKey": "FLWENCK_TEST-xxxx"
-    },
-    "Stripe": {
-      "SecretKey": "sk_test_51Hxxx",
-      "ApiVersion": "2023-10-16"
-    }
+{
+  "amount": 1000,
+  "currency": "NGN",
+  "description": "est",
+  "customerEmail": "tunde@yopmail.com",
+  "customerName": "string",
+  "customerPhone": "string",
+  "redirectUrl": "https://localhost:7252/api/payment/verify-transaction",
+  "webhookUrl": "https://localhost:7252/api/payment/verify-transaction",
+  "metadata": {
+    "additionalProp1": "string",
+    "additionalProp2": "string",
+    "additionalProp3": "string"
+  },
+  "paymentMethodType": 0,
+  "savedPaymentMethodId": "string",
+  "gateway": 1
+}
+```
+
+### 🔽 Sample Payment Response
+
+```json
+{
+  "success": true,
+  "transactionReference": "FLW_dc324e96d52b4bd48c401ff9194c15e8",
+  "message": "Hosted Link",
+  "checkoutUrl": "https://checkout-v2.dev-flutterwave.com/v3/hosted/pay/207b10ab0a05ddf19746",
+  "status": 0,
+  "gatewayResponse": {
+    "link": "https://checkout-v2.dev-flutterwave.com/v3/hosted/pay/207b10ab0a05ddf19746"
   }
 }
-
 ```
-
-> ✅ Ensure `Program.cs` loads configuration correctly from `appsettings.json`.
-
-### 💳 Processing a Payment
-
-```csharp
-using PayBridge.SDK.Application.Interfaces;
-using PayBridge.SDK.Application.Models;
-
-public class PaymentService
-{
-    private readonly IPaymentGatewayFactory _paymentGatewayFactory;
-
-    public PaymentService(IPaymentGatewayFactory paymentGatewayFactory)
-    {
-        _paymentGatewayFactory = paymentGatewayFactory;
-    }
-
-    public async Task<PaymentResponse> ProcessPayment(PaymentRequest request, string gatewayName)
-    {
-        var gateway = _paymentGatewayFactory.Create(gatewayName);
-        return await gateway.ProcessPaymentAsync(request);
-    }
-}
-```
-
-> 📌 Use `gatewayName` like `"Flutterwave"`, `"Paystack"`, etc.
-
-### 🔔 Handling Webhooks
-
-```csharp
-using Microsoft.AspNetCore.Mvc;
-using PayBridge.SDK.Application.Interfaces;
-
-[ApiController]
-[Route("api/[controller]")]
-public class WebhookController : ControllerBase
-{
-    private readonly IWebhookHandler _webhookHandler;
-
-    public WebhookController(IWebhookHandler webhookHandler)
-    {
-        _webhookHandler = webhookHandler;
-    }
-
-    [HttpPost("{gatewayName}")]
-    public async Task<IActionResult> HandleWebhook(string gatewayName)
-    {
-        var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
-        var result = await _webhookHandler.HandleAsync(gatewayName, json);
-
-        return result.Success ? Ok() : BadRequest(result.ErrorMessage);
-    }
-}
-```
-
-> ⚠️ Ensure `/api/webhook/{gatewayName}` matches your gateway dashboard callback URL.
 
 ---
 
@@ -168,27 +234,25 @@ public class WebhookController : ControllerBase
 
 We welcome your ideas, improvements, and fixes!
 
-### Steps
-
 1. **Fork** the repo → [PayBridge on GitHub](https://github.com/teesofttech/PayBridge)
 2. **Clone** your fork:
 
-   ```bash
-   git clone https://github.com/your-username/PayBridge.git
-   ```
+```bash
+git clone https://github.com/teesofttech/PayBridge.git
+```
 
 3. **Create a feature branch**:
 
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
+```bash
+git checkout -b feature/your-feature-name
+```
 
 4. **Implement**, **Commit**, and **Push**:
 
-   ```bash
-   git commit -m "feat: add new feature"
-   git push origin feature/your-feature-name
-   ```
+```bash
+git commit -m "feat: add new feature"
+git push origin feature/your-feature-name
+```
 
 5. **Create a Pull Request** and describe your changes.
 
