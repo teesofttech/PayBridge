@@ -200,8 +200,8 @@ public class PaymentController : ControllerBase
   "customerEmail": "tunde@yopmail.com",
   "customerName": "string",
   "customerPhone": "string",
-  "redirectUrl": "https://localhost:7252/api/payment/redirect",
-  "webhookUrl": "https://localhost:7252/api/payment/redirect",
+  "redirectUrl": "https://localhost:7252/api/payment/verify-transaction",
+  "webhookUrl": "https://localhost:7252/api/payment/verify-transaction",
   "metadata": {
     "additionalProp1": "string",
     "additionalProp2": "string",
@@ -238,7 +238,7 @@ We welcome your ideas, improvements, and fixes!
 2. **Clone** your fork:
 
 ```bash
-git clone https://github.com/your-username/PayBridge.git
+git clone https://github.com/teesofttech/PayBridge.git
 ```
 
 3. **Create a feature branch**:
