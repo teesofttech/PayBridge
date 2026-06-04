@@ -16,14 +16,14 @@ public class FlutterwaveGateway : IPaymentGateway
     private readonly PaymentGatewayConfig _config;
     private readonly HttpClient _httpClient;
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly ILogger<PaystackGateway> _logger;
+    private readonly ILogger<FlutterwaveGateway> _logger;
     private readonly string _baseUrl = "https://api.flutterwave.com";
-    public FlutterwaveGateway(IOptions<PaymentGatewayConfig> config, ILogger<PaystackGateway> logger, IHttpClientFactory httpClientFactory)
+    public FlutterwaveGateway(IOptions<PaymentGatewayConfig> config, ILogger<FlutterwaveGateway> logger, IHttpClientFactory httpClientFactory)
     {
         _config = config.Value;
         if (string.IsNullOrEmpty(_config.FlutterwaveConfig.SecretKey))
         {
-            throw new InvalidOperationException("Paystack secret key is required");
+            throw new InvalidOperationException("Flutterwave secret key is required");
         }
         _logger = logger;
 
@@ -37,7 +37,7 @@ public class FlutterwaveGateway : IPaymentGateway
     public PaymentGatewayType GatewayType => PaymentGatewayType.Flutterwave;
     public async Task<PaymentResponse> CreatePaymentAsync(PaymentRequest request)
     {
-        _logger.LogInformation("Creating Paystack payment for customer {Email}", request.CustomerEmail);
+        _logger.LogInformation("Creating Flutterwave payment for customer {Email}", request.CustomerEmail);
 
         try
         {
@@ -83,26 +83,26 @@ public class FlutterwaveGateway : IPaymentGateway
             using var jsonDocument = JsonDocument.Parse(responseBody);
             var root = jsonDocument.RootElement;
 
-            if (response.IsSuccessStatusCode && root.GetProperty("status").GetString().ToLower() == "success")
+            if (response.IsSuccessStatusCode && root.GetProperty("status").GetString()?.ToLower() == "success")
             {
                 var data = root.GetProperty("data");
                 return new PaymentResponse
                 {
                     Success = true,
-                    TransactionReference = flutterwaveRequest.tx_ref, // Make sure you pass this in or store it earlier
-                    Message = root.GetProperty("message").GetString(),
+                    TransactionReference = flutterwaveRequest.tx_ref,
+                    Message = root.GetProperty("message").GetString() ?? string.Empty,
                     Status = PaymentStatus.Pending,
-                    CheckoutUrl = data.GetProperty("link").GetString(),
+                    CheckoutUrl = data.GetProperty("link").GetString() ?? string.Empty,
                     GatewayResponse = new Dictionary<string, string>
                     {
-                        { "link", data.GetProperty("link").GetString() }
+                        { "link", data.GetProperty("link").GetString() ?? string.Empty }
                     }
                 };
             }
             else
             {
                 string errorMessage = root.TryGetProperty("message", out var message)
-                    ? message.GetString()
+                    ? message.GetString() ?? "Unknown error occurred"
                     : "Unknown error occurred";
 
                 _logger.LogError("Flutterwave payment initiation failed: {Error}", errorMessage);
@@ -142,12 +142,12 @@ public class FlutterwaveGateway : IPaymentGateway
 
         using var jsonDocument = JsonDocument.Parse(responseBody);
         var root = jsonDocument.RootElement;
-        if (response.IsSuccessStatusCode && root.GetProperty("status").GetString().ToLower() == "success")
+        if (response.IsSuccessStatusCode && root.GetProperty("status").GetString()?.ToLower() == "success")
         {
             var data = root.GetProperty("data");
 
             // Determine payment status based on Flutterwave response
-            var statusStr = data.GetProperty("status").GetString().ToLower();
+            var statusStr = data.GetProperty("status").GetString()?.ToLower() ?? string.Empty;
             var paymentStatus = statusStr switch
             {
                 "successful" => PaymentStatus.Successful,
@@ -164,22 +164,22 @@ public class FlutterwaveGateway : IPaymentGateway
                 Status = paymentStatus,
                 Amount = data.GetProperty("amount").GetDecimal(),
                 PaymentDate = data.TryGetProperty("created_at", out var paidAt) && !string.IsNullOrEmpty(paidAt.GetString())
-                        ? DateTime.Parse(paidAt.GetString())
+                        ? DateTime.Parse(paidAt.GetString()!)
                         : DateTime.UtcNow,
-                Currency = data.GetProperty("currency").GetString(),
+                Currency = data.GetProperty("currency").GetString() ?? string.Empty,
                 Fee = data.TryGetProperty("app_fee", out var fee) ? fee.GetDecimal() : 0,
-                PaymentMethod = data.TryGetProperty("payment_type", out var paymentMethod) ? paymentMethod.GetString() : string.Empty,
+                PaymentMethod = data.TryGetProperty("payment_type", out var paymentMethod) ? paymentMethod.GetString() ?? string.Empty : string.Empty,
                 AmountSettled = data.TryGetProperty("amount_settled", out var amountSettled) ? amountSettled.GetDecimal() : 0,
-                Metadata = data.TryGetProperty("meta", out var meta) ? JsonSerializer.Deserialize<Dictionary<string, string>>(meta.GetRawText()) : new Dictionary<string, string>()
+                Metadata = data.TryGetProperty("meta", out var meta) ? JsonSerializer.Deserialize<Dictionary<string, string>>(meta.GetRawText()) ?? new Dictionary<string, string>() : new Dictionary<string, string>()
             };
         }
         else
         {
             string errorMessage = root.TryGetProperty("message", out var message)
-                ? message.GetString()
+                ? message.GetString() ?? "Unknown error occurred during verification"
                 : "Unknown error occurred during verification";
 
-            _logger.LogError("Paystack verification failed: {Error}", errorMessage);
+            _logger.LogError("Flutterwave verification failed: {Error}", errorMessage);
 
             return new VerificationResponse
             {
