@@ -29,7 +29,7 @@
 
 ## 🚀 Features
 
-- **Unified API**: Interact with multiple payment gateways (e.g., Flutterwave, Paystack, Fincra, Stripe) through a single, consistent interface.
+- **Unified API**: Interact with multiple payment gateways (e.g., Flutterwave, Paystack, Fincra, Stripe, Korapay) through a single, consistent interface.
 - **Database Flexibility**: Choose between PayBridge's default database or integrate with your own.
 - **Transaction Logging**: Automatically records transaction details for auditing and reporting.
 - **Extensible Architecture**: Built with Clean Architecture principles for maintainability and scalability.
@@ -59,6 +59,20 @@ Edit `appsettings.json`:
   "ConnectionStrings": {
     "PayBridgeDbContext": "Data Source=BABATUNDE;Initial Catalog=PayBridgeDB;Integrated Security=True;TrustServerCertificate=true;"
   }
+```
+
+### ⚙️ Configure Payment Gateways
+
+Korapay website: https://www.korahq.com/
+
+```json
+"PaymentGatewayConfig": {
+  "EnabledGateways": [ "Paystack", "Flutterwave", "Stripe", "Korapay" ],
+  "Korapay": {
+    "PublicKey": "pk_sandbox_xxxx",
+    "SecretKey": "sk_sandbox_xxxx"
+  }
+}
 ```
 
 ### 📚 Apply Migrations

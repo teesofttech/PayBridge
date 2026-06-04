@@ -40,6 +40,15 @@ public static class GatewayExtractor
                 return PaymentGatewayType.Checkout;
             }
 
+            if (((IDictionary<string, object>)data).ContainsKey("reference"))
+            {
+                var reference = ((IDictionary<string, object>)data)["reference"]?.ToString();
+                if (reference?.StartsWith("KR_", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    return PaymentGatewayType.Korapay;
+                }
+            }
+
             // Default to Automatic if we can't determine the gateway
             return PaymentGatewayType.Automatic;
         }
@@ -87,6 +96,9 @@ public static class GatewayExtractor
                 case PaymentGatewayType.Checkout:
                     // Checkout.com webhook format
                     return data.data.reference;
+
+                case PaymentGatewayType.Korapay:
+                    return data.reference;
             }
 
             // If we couldn't extract a reference using the known formats,

@@ -14,6 +14,7 @@ public class PaymentGatewayConfig
     public KnetConfig Knet { get; set; } = new();
     public MonnifyConfig Monnify { get; set; } = new();
     public SquadConfig Squad { get; set; } = new();
+    public KorapayConfig Korapay { get; set; } = new();
 }
 
 public class PaystackConfig
@@ -77,3 +78,8 @@ public class SquadConfig
     public bool IsSandbox { get; set; } = false;
 }
 
+public class KorapayConfig
+{
+    public string PublicKey { get; set; } = string.Empty;
+    public string SecretKey { get; set; } = string.Empty;
+}
