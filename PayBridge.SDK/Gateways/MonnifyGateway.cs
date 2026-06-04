@@ -74,7 +74,11 @@ public class MonnifyGateway : IPaymentGateway
             return token.GetString() ?? throw new InvalidOperationException("Monnify returned an empty access token");
         }
 
-        throw new InvalidOperationException("Failed to obtain Monnify access token");
+        var errorMessage = root.TryGetProperty("responseMessage", out var msg)
+            ? msg.GetString()
+            : null;
+
+        throw new InvalidOperationException($"Failed to obtain Monnify access token. StatusCode={(int)response.StatusCode}. {errorMessage}");
     }
 
     public async Task<PaymentResponse> CreatePaymentAsync(PaymentRequest request)
