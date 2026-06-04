@@ -133,6 +133,7 @@ public static class IServiceCollectionExtensions
             services.AddScoped<BenefitPayGateway>();
             services.AddScoped<KnetGateway>();
             services.AddScoped<MonnifyGateway>();
+            services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<MonnifyGateway>());
             return;
         }
 
