@@ -67,13 +67,20 @@ public class InterswitchGateway : IPaymentGateway
             ["scope"] = "profile"
         });
 
-        var response = await _httpClient.SendAsync(tokenRequest);
-        var body = await response.Content.ReadAsStringAsync();
+var response = await _httpClient.SendAsync(tokenRequest);
+var body = await response.Content.ReadAsStringAsync();
 
-        _logger.LogDebug("Interswitch auth response: {Body}", body);
+if (response.IsSuccessStatusCode)
+{
+    _logger.LogDebug("Interswitch auth succeeded ({StatusCode})", response.StatusCode);
+}
+else
+{
+    _logger.LogDebug("Interswitch auth failed ({StatusCode}): {Body}", response.StatusCode, body);
+}
 
-        using var doc = JsonDocument.Parse(body);
-        var root = doc.RootElement;
+using var doc = JsonDocument.Parse(body);
+var root = doc.RootElement;
 
         if (response.IsSuccessStatusCode && root.TryGetProperty("access_token", out var token))
             return token.GetString() ?? throw new InvalidOperationException("Interswitch returned an empty access token");
