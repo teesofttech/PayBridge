@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using PayBridge.SDK.Application.Dtos;
 using PayBridge.SDK.Enums;
-using PayBridge.SDK.Gateways;
 using PayBridge.SDK.Interfaces;
 
 namespace PayBridge.SDK;
@@ -47,6 +46,7 @@ public class PaymentGatewayFactory
             TryAddGateway(gateways, PaymentGatewayType.Korapay);
             TryAddGateway(gateways, PaymentGatewayType.Interswitch);
             TryAddGateway(gateways, PaymentGatewayType.Remita);
+            TryAddGateway(gateways, PaymentGatewayType.Opay);
         }
         else
         {
@@ -91,6 +91,7 @@ public class PaymentGatewayFactory
                 PaymentGatewayType.Korapay => _serviceProvider.GetService<KorapayGateway>(),
                 PaymentGatewayType.Interswitch => _serviceProvider.GetService<InterswitchGateway>(),
                 PaymentGatewayType.Remita => _serviceProvider.GetService<RemitaGateway>(),
+                PaymentGatewayType.Opay => _serviceProvider.GetService<OpayGateway>(),
                 _ => null
             };
 

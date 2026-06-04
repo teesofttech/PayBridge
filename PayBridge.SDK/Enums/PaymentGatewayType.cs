@@ -62,5 +62,10 @@ public enum PaymentGatewayType
     /// <summary>
     /// Remita payment gateway (Nigeria)
     /// </summary>
-    Remita = 11
+    Remita = 11,
+
+    /// <summary>
+    /// OPay payment gateway (Nigeria / Africa)
+    /// </summary>
+    Opay = 12
 }

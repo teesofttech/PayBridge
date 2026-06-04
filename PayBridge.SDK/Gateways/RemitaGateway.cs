@@ -11,7 +11,7 @@ using PayBridge.SDK.Enums;
 using PayBridge.SDK.Exceptions;
 using PayBridge.SDK.Interfaces;
 
-namespace PayBridge.SDK.Gateways;
+namespace PayBridge.SDK;
 
 /// <summary>
 /// Remita payment gateway implementation for Nigerian payments.
