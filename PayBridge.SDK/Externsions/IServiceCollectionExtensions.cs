@@ -176,7 +176,8 @@ public static class IServiceCollectionExtensions
                     services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<KorapayGateway>());
                     break;
                 case PaymentGatewayType.Interswitch:
-                    services.AddScoped<InterswitchGateway>();
+services.AddScoped<InterswitchGateway>();
+services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<InterswitchGateway>());
                     break;
             }
         }
