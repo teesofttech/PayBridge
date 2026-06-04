@@ -62,7 +62,7 @@ public class KorapayGateway : IPaymentGateway
         try
         {
             var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync("/charges/initialize", content);
+            var response = await _httpClient.PostAsync("charges/initialize", content);
             var responseBody = await response.Content.ReadAsStringAsync();
             using var jsonDocument = JsonDocument.Parse(responseBody);
             var root = jsonDocument.RootElement;
