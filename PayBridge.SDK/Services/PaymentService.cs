@@ -249,7 +249,7 @@ public class PaymentService : IPaymentService
         switch (request.Currency?.ToUpper())
         {
             case "NGN":
-                return ChooseAvailableGateway(PaymentGatewayType.Monnify, PaymentGatewayType.Squad, PaymentGatewayType.Korapay, PaymentGatewayType.Interswitch, PaymentGatewayType.Paystack, PaymentGatewayType.Flutterwave);
+                return ChooseAvailableGateway(PaymentGatewayType.Monnify, PaymentGatewayType.Squad, PaymentGatewayType.Korapay, PaymentGatewayType.Interswitch, PaymentGatewayType.Remita, PaymentGatewayType.Paystack, PaymentGatewayType.Flutterwave);
 
             case "KES":
             case "GHS":
@@ -340,6 +340,11 @@ public class PaymentService : IPaymentService
         if (transactionReference.StartsWith(GatewayReferencePrefixes.Korapay))
         {
             return PaymentGatewayType.Korapay;
+        }
+
+        if (transactionReference.StartsWith("REM_"))
+        {
+            return PaymentGatewayType.Remita;
         }
 
         // Default to configured default gateway

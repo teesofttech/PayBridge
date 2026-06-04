@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PayBridge.SDK.Application.Dtos;
 using PayBridge.SDK.Enums;
+using PayBridge.SDK.Gateways;
 using PayBridge.SDK.Interfaces;
 
 namespace PayBridge.SDK;
@@ -135,6 +136,7 @@ public static class IServiceCollectionExtensions
             services.AddScoped<KorapayGateway>();
             services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<KorapayGateway>());
             services.AddScoped<InterswitchGateway>();
+            services.AddScoped<RemitaGateway>();
             return;
         }
 
@@ -173,6 +175,9 @@ public static class IServiceCollectionExtensions
                 case PaymentGatewayType.Interswitch:
 services.AddScoped<InterswitchGateway>();
 services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<InterswitchGateway>());
+                    break;
+                case PaymentGatewayType.Remita:
+                    services.AddScoped<RemitaGateway>();
                     break;
             }
         }

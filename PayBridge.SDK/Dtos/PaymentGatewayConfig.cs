@@ -16,6 +16,7 @@ public class PaymentGatewayConfig
     public SquadConfig Squad { get; set; } = new();
     public KorapayConfig Korapay { get; set; } = new();
     public InterswitchConfig Interswitch { get; set; } = new();
+    public RemitaConfig Remita { get; set; } = new();
 }
 
 public class PaystackConfig
@@ -104,4 +105,12 @@ public class InterswitchConfig
     /// Set to true to use Interswitch sandbox (test) environment.
     /// </summary>
     public bool IsSandbox { get; set; } = false;
+}
+
+public class RemitaConfig
+{
+    public string MerchantId { get; set; } = string.Empty;
+    public string ServiceTypeId { get; set; } = string.Empty;
+    public string ApiKey { get; set; } = string.Empty;
+    public bool IsSandbox { get; set; } = true;
 }
