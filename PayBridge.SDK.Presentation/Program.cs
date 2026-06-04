@@ -19,7 +19,7 @@ builder.Logging.AddSerilog(logger);
 builder.Services.AddProblemDetails();
 
 // Add DB repository based on the configured provider
-builder.Services.AddDBRepository(builder.Configuration, "MSSQL");
+builder.Services.AddDBRepository(builder.Configuration, "SqlServer");
 builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();
 
