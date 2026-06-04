@@ -42,5 +42,10 @@ public enum PaymentGatewayType
     /// <summary>
     /// Monnify payment gateway (Nigeria)
     /// </summary>
-    Monnify = 7
+    Monnify = 7,
+
+    /// <summary>
+    /// Squad payment gateway by GTCo (Nigeria)
+    /// </summary>
+    Squad = 8
 }
