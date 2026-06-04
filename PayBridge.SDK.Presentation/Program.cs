@@ -29,7 +29,8 @@ builder.Services.AddPayBridge(config =>
     {
         PaymentGatewayType.Stripe,
         PaymentGatewayType.Paystack,
-        PaymentGatewayType.Flutterwave
+        PaymentGatewayType.Flutterwave,
+        PaymentGatewayType.Korapay
     };
 });
 var app = builder.Build();

@@ -47,5 +47,10 @@ public enum PaymentGatewayType
     /// <summary>
     /// Squad payment gateway by GTCo (Nigeria)
     /// </summary>
-    Squad = 8
+    Squad = 8,
+
+    /// <summary>
+    /// Korapay payment gateway (Nigeria/Africa)
+    /// </summary>
+    Korapay = 9
 }

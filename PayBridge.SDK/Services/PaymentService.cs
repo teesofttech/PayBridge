@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using PayBridge.SDK.Application.Dtos;
 using PayBridge.SDK.Application.Dtos.Request;
+using PayBridge.SDK.Constants;
 using PayBridge.SDK.Dtos.Request;
 using PayBridge.SDK.Dtos.Response;
 using PayBridge.SDK.Entities;
@@ -248,7 +249,7 @@ public class PaymentService : IPaymentService
         switch (request.Currency?.ToUpper())
         {
             case "NGN":
-                return ChooseAvailableGateway(PaymentGatewayType.Monnify, PaymentGatewayType.Squad, PaymentGatewayType.Paystack, PaymentGatewayType.Flutterwave);
+                return ChooseAvailableGateway(PaymentGatewayType.Monnify, PaymentGatewayType.Squad, PaymentGatewayType.Korapay, PaymentGatewayType.Paystack, PaymentGatewayType.Flutterwave);
 
             case "KES":
             case "GHS":
@@ -329,6 +330,11 @@ public class PaymentService : IPaymentService
         if (transactionReference.StartsWith("KN_"))
         {
             return PaymentGatewayType.Knet;
+        }
+
+        if (transactionReference.StartsWith(GatewayReferencePrefixes.Korapay))
+        {
+            return PaymentGatewayType.Korapay;
         }
 
         // Default to configured default gateway
