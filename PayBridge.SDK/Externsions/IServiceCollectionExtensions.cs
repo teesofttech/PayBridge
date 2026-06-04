@@ -162,6 +162,7 @@ public static class IServiceCollectionExtensions
                     break;
                 case PaymentGatewayType.Monnify:
                     services.AddScoped<MonnifyGateway>();
+                    services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<MonnifyGateway>());
                     break;
             }
         }
