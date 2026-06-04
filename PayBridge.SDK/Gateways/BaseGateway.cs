@@ -13,7 +13,7 @@ internal abstract class BaseGateway : IPaymentGateway
     protected readonly HttpClient HttpClient;
     protected readonly ILogger<BaseGateway> Logger;
 
-    public PaymentGatewayType GatewayType => throw new NotImplementedException();
+    public abstract PaymentGatewayType GatewayType { get; }
 
     protected BaseGateway(PaymentGatewayConfig config, ILogger<BaseGateway> logger)
     {
