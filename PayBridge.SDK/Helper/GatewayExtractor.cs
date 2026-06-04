@@ -1,4 +1,5 @@
-﻿using PayBridge.SDK.Enums;
+using PayBridge.SDK.Constants;
+using PayBridge.SDK.Enums;
 
 namespace PayBridge.SDK.Helper;
 public static class GatewayExtractor
@@ -15,35 +16,37 @@ public static class GatewayExtractor
 
         try
         {
+            var webhookDictionary = (IDictionary<string, object>)data;
+
             // Paystack webhooks contain an 'event' property
-            if (((IDictionary<string, object>)data).ContainsKey("event"))
+            if (webhookDictionary.ContainsKey("event"))
             {
                 return PaymentGatewayType.Paystack;
             }
 
             // Flutterwave webhooks contain a 'flw_ref' property
-            if (((IDictionary<string, object>)data).ContainsKey("flw_ref"))
+            if (webhookDictionary.ContainsKey("flw_ref"))
             {
                 return PaymentGatewayType.Flutterwave;
             }
 
             // Stripe webhooks contain a 'type' property starting with 'stripe.'
-            if (((IDictionary<string, object>)data).ContainsKey("type") &&
+            if (webhookDictionary.ContainsKey("type") &&
                 data.type.ToString().StartsWith("stripe."))
             {
                 return PaymentGatewayType.Stripe;
             }
 
             // Checkout.com webhooks contain a '_links' property
-            if (((IDictionary<string, object>)data).ContainsKey("_links"))
+            if (webhookDictionary.ContainsKey("_links"))
             {
                 return PaymentGatewayType.Checkout;
             }
 
-            if (((IDictionary<string, object>)data).ContainsKey("reference"))
+            if (webhookDictionary.ContainsKey("reference"))
             {
-                var reference = ((IDictionary<string, object>)data)["reference"]?.ToString();
-                if (reference?.StartsWith("KR_", StringComparison.OrdinalIgnoreCase) == true)
+                var reference = webhookDictionary["reference"]?.ToString();
+                if (reference?.StartsWith(GatewayReferencePrefixes.Korapay, StringComparison.OrdinalIgnoreCase) == true)
                 {
                     return PaymentGatewayType.Korapay;
                 }

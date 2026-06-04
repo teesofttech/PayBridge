@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using PayBridge.SDK.Application.Dtos;
 using PayBridge.SDK.Application.Dtos.Request;
+using PayBridge.SDK.Constants;
 using PayBridge.SDK.Dtos.Request;
 using PayBridge.SDK.Dtos.Response;
 using PayBridge.SDK.Entities;
@@ -331,7 +332,7 @@ public class PaymentService : IPaymentService
             return PaymentGatewayType.Knet;
         }
 
-        if (transactionReference.StartsWith("KR_"))
+        if (transactionReference.StartsWith(GatewayReferencePrefixes.Korapay))
         {
             return PaymentGatewayType.Korapay;
         }

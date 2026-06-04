@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PayBridge.SDK.Application.Dtos;
 using PayBridge.SDK.Application.Dtos.Request;
+using PayBridge.SDK.Constants;
 using PayBridge.SDK.Dtos.Request;
 using PayBridge.SDK.Dtos.Response;
 using PayBridge.SDK.Enums;
@@ -39,9 +40,9 @@ public class KorapayGateway : IPaymentGateway
 
     public async Task<PaymentResponse> CreatePaymentAsync(PaymentRequest request)
     {
-        _logger.LogInformation("Creating Korapay payment for customer {Email}", request.CustomerEmail);
+        _logger.LogInformation("Creating Korapay payment for customer {Email}", SanitizeForLog(request.CustomerEmail));
 
-        var txRef = $"KR_{Guid.NewGuid():N}";
+        var txRef = $"{GatewayReferencePrefixes.Korapay}{Guid.NewGuid():N}";
         var payload = new
         {
             amount = request.Amount,
@@ -103,7 +104,7 @@ public class KorapayGateway : IPaymentGateway
 
     public async Task<VerificationResponse> VerifyPaymentAsync(string transactionReference)
     {
-        _logger.LogInformation("Verifying Korapay payment: {Reference}", transactionReference);
+        _logger.LogInformation("Verifying Korapay payment: {Reference}", SanitizeForLog(transactionReference));
 
         try
         {
@@ -153,7 +154,7 @@ public class KorapayGateway : IPaymentGateway
 
     public async Task<RefundResponse> RefundPaymentAsync(RefundRequest request)
     {
-        _logger.LogInformation("Processing Korapay refund for transaction: {Reference}", request.TransactionReference);
+        _logger.LogInformation("Processing Korapay refund for transaction: {Reference}", SanitizeForLog(request.TransactionReference));
 
         var payload = new
         {
@@ -220,5 +221,15 @@ public class KorapayGateway : IPaymentGateway
 
         var value = property.GetString();
         return DateTime.TryParse(value, out var parsed) ? parsed : null;
+    }
+
+    private static string SanitizeForLog(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        return value.Replace("\r", string.Empty).Replace("\n", string.Empty);
     }
 }
