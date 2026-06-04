@@ -74,12 +74,12 @@ public class PaymentGatewayFactory
         {
             IPaymentGateway gateway = gatewayType switch
             {
-                //PaymentGatewayType.Stripe => _serviceProvider.GetService<StripeGateway>(),
+                PaymentGatewayType.Stripe => _serviceProvider.GetService<StripeGateway>(),
                 PaymentGatewayType.Paystack => _serviceProvider.GetService<PaystackGateway>(),
                 PaymentGatewayType.Flutterwave => _serviceProvider.GetService<FlutterwaveGateway>(),
-                //PaymentGatewayType.Checkout => _serviceProvider.GetService<CheckoutGateway>(),
-                //PaymentGatewayType.BenefitPay => _serviceProvider.GetService<BenefitPayGateway>(),
-                //PaymentGatewayType.Knet => _serviceProvider.GetService<KnetGateway>(),
+                PaymentGatewayType.Checkout => _serviceProvider.GetService<CheckoutGateway>(),
+                PaymentGatewayType.BenefitPay => _serviceProvider.GetService<BenefitPayGateway>(),
+                PaymentGatewayType.Knet => _serviceProvider.GetService<KnetGateway>(),
                 _ => null
             };
 
