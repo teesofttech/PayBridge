@@ -85,6 +85,9 @@ public class MonnifyGateway : IPaymentGateway
         {
             var accessToken = await GetAccessTokenAsync();
             var txRef = $"MNF_{Guid.NewGuid():N}";
+            var currency = request.Currency?.ToUpperInvariant();
+            if (currency != "NGN")
+                throw new InvalidOperationException($"Monnify only supports NGN payments (received '{request.Currency}').");
 
             var monnifyRequest = new
             {
@@ -93,7 +96,7 @@ public class MonnifyGateway : IPaymentGateway
                 customerEmail = request.CustomerEmail,
                 paymentReference = txRef,
                 paymentDescription = request.AppName ?? "Payment",
-                currencyCode = "NGN",
+                currencyCode = currency,
                 contractCode = _config.Monnify.ContractCode,
                 redirectUrl = request.RedirectUrl,
                 paymentMethods = new[] { "CARD", "ACCOUNT_TRANSFER" }
