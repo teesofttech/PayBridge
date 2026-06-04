@@ -136,6 +136,7 @@ public static class IServiceCollectionExtensions
             services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<MonnifyGateway>());
             services.AddScoped<SquadGateway>();
             services.AddScoped<KorapayGateway>();
+            services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<KorapayGateway>());
             return;
         }
 
