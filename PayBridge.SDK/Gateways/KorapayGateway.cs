@@ -18,7 +18,7 @@ public class KorapayGateway : IPaymentGateway
     private readonly PaymentGatewayConfig _config;
     private readonly HttpClient _httpClient;
     private readonly ILogger<KorapayGateway> _logger;
-    private const string BaseUrl = "https://api.korapay.com/merchant/api/v1";
+    private const string BaseUrl = "https://api.korapay.com/merchant/api/v1/";
 
     public PaymentGatewayType GatewayType => PaymentGatewayType.Korapay;
 
