@@ -12,6 +12,7 @@ public class PaymentGatewayConfig
     public CheckoutConfig Checkout { get; set; } = new();
     public BenefitPayConfig BenefitPay { get; set; } = new();
     public KnetConfig Knet { get; set; } = new();
+    public MonnifyConfig Monnify { get; set; } = new();
 }
 
 public class PaystackConfig
@@ -51,5 +52,16 @@ public class KnetConfig
     public string TransportId { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     public string TerminalResourceKey { get; set; } = string.Empty;
+}
+
+public class MonnifyConfig
+{
+    public string ApiKey { get; set; } = string.Empty;
+    public string SecretKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The contract code assigned to your merchant account on Monnify.
+    /// </summary>
+    public string ContractCode { get; set; } = string.Empty;
 }
 

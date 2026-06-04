@@ -41,6 +41,7 @@ public class PaymentGatewayFactory
             TryAddGateway(gateways, PaymentGatewayType.Checkout);
             TryAddGateway(gateways, PaymentGatewayType.BenefitPay);
             TryAddGateway(gateways, PaymentGatewayType.Knet);
+            TryAddGateway(gateways, PaymentGatewayType.Monnify);
         }
         else
         {
@@ -72,7 +73,7 @@ public class PaymentGatewayFactory
     {
         try
         {
-            IPaymentGateway gateway = gatewayType switch
+            IPaymentGateway? gateway = gatewayType switch
             {
                 PaymentGatewayType.Stripe => _serviceProvider.GetService<StripeGateway>(),
                 PaymentGatewayType.Paystack => _serviceProvider.GetService<PaystackGateway>(),
@@ -80,6 +81,7 @@ public class PaymentGatewayFactory
                 PaymentGatewayType.Checkout => _serviceProvider.GetService<CheckoutGateway>(),
                 PaymentGatewayType.BenefitPay => _serviceProvider.GetService<BenefitPayGateway>(),
                 PaymentGatewayType.Knet => _serviceProvider.GetService<KnetGateway>(),
+                PaymentGatewayType.Monnify => _serviceProvider.GetService<MonnifyGateway>(),
                 _ => null
             };
 

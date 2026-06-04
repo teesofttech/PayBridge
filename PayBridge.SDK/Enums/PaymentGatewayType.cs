@@ -37,5 +37,10 @@ public enum PaymentGatewayType
     /// <summary>
     /// Knet payment gateway
     /// </summary>
-    Knet = 6
+    Knet = 6,
+
+    /// <summary>
+    /// Monnify payment gateway (Nigeria)
+    /// </summary>
+    Monnify = 7
 }
