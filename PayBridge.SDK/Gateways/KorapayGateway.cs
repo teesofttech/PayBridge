@@ -108,7 +108,7 @@ public class KorapayGateway : IPaymentGateway
 
         try
         {
-            var response = await _httpClient.GetAsync($"/charges/{transactionReference}");
+            var response = await _httpClient.GetAsync($"charges/{transactionReference}");
             var responseBody = await response.Content.ReadAsStringAsync();
             using var jsonDocument = JsonDocument.Parse(responseBody);
             var root = jsonDocument.RootElement;
