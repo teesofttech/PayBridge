@@ -172,6 +172,7 @@ public static class IServiceCollectionExtensions
                     break;
                 case PaymentGatewayType.Korapay:
                     services.AddScoped<KorapayGateway>();
+                    services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<KorapayGateway>());
                     break;
             }
         }
