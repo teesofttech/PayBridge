@@ -307,7 +307,7 @@ var root = doc.RootElement;
                 ? desc.GetString() ?? "Refund failed"
                 : "Refund request failed";
 
-            return new RefundResponse { Success = false, Message = errorMessage };
+return new RefundResponse { Success = false, Message = errorMessage, Status = PaymentStatus.Failed };
         }
         catch (Exception ex)
         {
