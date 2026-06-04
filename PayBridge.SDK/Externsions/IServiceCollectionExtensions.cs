@@ -23,7 +23,7 @@ public static class IServiceCollectionExtensions
     {
         var connectionString = configuration.GetConnectionString(nameof(PayBridgeDbContext));
         var providerConfigured = configuration["DatabaseProvider"] ?? provider;
-        if (provider == providerConfigured)
+        if (providerConfigured == "SqlServer")
         {
             services.AddDbContext<PayBridgeDbContext>(options =>
             {
@@ -36,7 +36,7 @@ public static class IServiceCollectionExtensions
                     null));
             }, ServiceLifetime.Scoped);
         }
-        else if (provider == providerConfigured)
+        else if (providerConfigured == "Npgsql")
         {
             services.AddDbContext<PayBridgeDbContext>(options =>
             {
@@ -49,7 +49,7 @@ public static class IServiceCollectionExtensions
                     null));
             }, ServiceLifetime.Scoped);
         }
-        else if (provider == providerConfigured)
+        else if (providerConfigured == "MySql")
         {
             services.AddDbContext<PayBridgeDbContext>(options =>
             {
@@ -64,7 +64,7 @@ public static class IServiceCollectionExtensions
         }
         else
         {
-            throw new NotSupportedException($"The provider '{provider}' is not supported.");
+            throw new NotSupportedException($"The provider '{providerConfigured}' is not supported. Use 'SqlServer', 'Npgsql', or 'MySql'.");
         }
 
         return services;
