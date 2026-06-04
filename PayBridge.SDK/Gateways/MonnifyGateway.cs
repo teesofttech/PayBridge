@@ -62,8 +62,8 @@ public class MonnifyGateway : IPaymentGateway
         var response = await _httpClient.SendAsync(tokenRequest);
         var body = await response.Content.ReadAsStringAsync();
 
-        _logger.LogDebug("Monnify auth response: {Body}", body);
-
+        // Avoid logging the raw body; it may contain an access token.
+        _logger.LogDebug("Monnify auth response status: {StatusCode}", (int)response.StatusCode);
         using var doc = JsonDocument.Parse(body);
         var root = doc.RootElement;
 
