@@ -132,6 +132,7 @@ public static class IServiceCollectionExtensions
             services.AddScoped<CheckoutGateway>();
             services.AddScoped<BenefitPayGateway>();
             services.AddScoped<KnetGateway>();
+            services.AddScoped<MonnifyGateway>();
             return;
         }
 
@@ -157,6 +158,9 @@ public static class IServiceCollectionExtensions
                     break;
                 case PaymentGatewayType.Knet:
                     services.AddScoped<KnetGateway>();
+                    break;
+                case PaymentGatewayType.Monnify:
+                    services.AddScoped<MonnifyGateway>();
                     break;
             }
         }
