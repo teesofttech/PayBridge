@@ -134,6 +134,7 @@ public static class IServiceCollectionExtensions
             services.AddScoped<KnetGateway>();
             services.AddScoped<MonnifyGateway>();
             services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<MonnifyGateway>());
+            services.AddScoped<SquadGateway>();
             return;
         }
 
@@ -164,8 +165,10 @@ public static class IServiceCollectionExtensions
                     services.AddScoped<MonnifyGateway>();
                     services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<MonnifyGateway>());
                     break;
+                case PaymentGatewayType.Squad:
+                    services.AddScoped<SquadGateway>();
+                    break;
             }
         }
     }
-
 }

@@ -248,7 +248,7 @@ public class PaymentService : IPaymentService
         switch (request.Currency?.ToUpper())
         {
             case "NGN":
-                return ChooseAvailableGateway(PaymentGatewayType.Monnify, PaymentGatewayType.Paystack, PaymentGatewayType.Flutterwave);
+                return ChooseAvailableGateway(PaymentGatewayType.Monnify, PaymentGatewayType.Squad, PaymentGatewayType.Paystack, PaymentGatewayType.Flutterwave);
 
             case "KES":
             case "GHS":
@@ -309,6 +309,11 @@ public class PaymentService : IPaymentService
         if (transactionReference.StartsWith("MNF_"))
         {
             return PaymentGatewayType.Monnify;
+        }
+
+        if (transactionReference.StartsWith("SQ_"))
+        {
+            return PaymentGatewayType.Squad;
         }
 
         if (transactionReference.StartsWith("CO_"))

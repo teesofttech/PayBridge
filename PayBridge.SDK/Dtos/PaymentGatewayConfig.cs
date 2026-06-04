@@ -13,6 +13,7 @@ public class PaymentGatewayConfig
     public BenefitPayConfig BenefitPay { get; set; } = new();
     public KnetConfig Knet { get; set; } = new();
     public MonnifyConfig Monnify { get; set; } = new();
+    public SquadConfig Squad { get; set; } = new();
 }
 
 public class PaystackConfig
@@ -63,5 +64,16 @@ public class MonnifyConfig
     /// The contract code assigned to your merchant account on Monnify.
     /// </summary>
     public string ContractCode { get; set; } = string.Empty;
+}
+
+public class SquadConfig
+{
+    public string SecretKey { get; set; } = string.Empty;
+    public string PublicKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Set to true to use Squad sandbox (test) environment.
+    /// </summary>
+    public bool IsSandbox { get; set; } = false;
 }
 
