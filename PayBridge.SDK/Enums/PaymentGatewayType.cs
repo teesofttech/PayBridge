@@ -52,5 +52,10 @@ public enum PaymentGatewayType
     /// <summary>
     /// Korapay payment gateway (Nigeria/Africa)
     /// </summary>
-    Korapay = 9
+    Korapay = 9,
+
+    /// <summary>
+    /// Interswitch payment gateway (Nigeria - Quickteller / Webpay)
+    /// </summary>
+    Interswitch = 10
 }

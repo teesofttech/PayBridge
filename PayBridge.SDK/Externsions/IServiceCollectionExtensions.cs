@@ -137,6 +137,7 @@ public static class IServiceCollectionExtensions
             services.AddScoped<SquadGateway>();
             services.AddScoped<KorapayGateway>();
             services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<KorapayGateway>());
+            services.AddScoped<InterswitchGateway>();
             return;
         }
 
@@ -173,6 +174,10 @@ public static class IServiceCollectionExtensions
                 case PaymentGatewayType.Korapay:
                     services.AddScoped<KorapayGateway>();
                     services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<KorapayGateway>());
+                    break;
+                case PaymentGatewayType.Interswitch:
+services.AddScoped<InterswitchGateway>();
+services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<InterswitchGateway>());
                     break;
             }
         }
