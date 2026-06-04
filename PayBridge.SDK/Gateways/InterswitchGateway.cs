@@ -89,9 +89,8 @@ var root = doc.RootElement;
     }
 
     // -----------------------------------------------------------------------
-    // Interswitch requires SHA-512 HMAC request signing for Webpay.
-    // Signature = SHA512(requestRef + timestamp + clientId + clientSecret)
-    // -----------------------------------------------------------------------
+// Interswitch requires HMAC-SHA512 request signing for Webpay.
+// Current implementation: Base64(HMACSHA512(key=clientSecret, message=requestRef + timestamp + clientId + clientSecret))
 
     private static string GenerateSignature(string requestRef, string timestamp, string clientId, string clientSecret)
     {
