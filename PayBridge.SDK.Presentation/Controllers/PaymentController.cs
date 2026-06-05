@@ -100,9 +100,9 @@ public class PaymentController : ControllerBase
             }
 
             PaymentGatewayType gateway = GatewayExtractor.DetectGatewayFromWebhook(allParams.Values);
-            string reference = allParams.Values.FirstOrDefault()!.ToString()!;
+            string? reference = allParams.Values.FirstOrDefault();
 
-            if (string.IsNullOrEmpty(reference))
+            if (string.IsNullOrWhiteSpace(reference))
             {
                 _logger.LogWarning("Could not extract transaction reference from Query");
                 return BadRequest(new ErrorResponse
@@ -156,6 +156,15 @@ public class PaymentController : ControllerBase
     {
         try
         {
+            if (string.IsNullOrWhiteSpace(verifyRequest.Reference))
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Message = "Transaction reference is required",
+                    ErrorCode = "INVALID_REQUEST"
+                });
+            }
+
             _logger.LogInformation("Verifying payment: {Reference}", verifyRequest.Reference);
 
             var response = await _paymentService.VerifyPaymentAsync(verifyRequest.Reference);

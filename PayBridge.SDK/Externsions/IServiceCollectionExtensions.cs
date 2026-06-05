@@ -22,7 +22,7 @@ public static class IServiceCollectionExtensions
     public static IServiceCollection AddDBRepository(this IServiceCollection services, IConfiguration configuration, string provider)
     {
         var connectionString = configuration.GetConnectionString(nameof(PayBridgeDbContext));
-        var providerConfigured = configuration["DatabaseProvider"] ?? provider;
+        var providerConfigured = NormalizeProviderName(configuration["DatabaseProvider"] ?? provider);
         if (providerConfigured == "SqlServer")
         {
             services.AddDbContext<PayBridgeDbContext>(options =>
@@ -105,9 +105,6 @@ public static class IServiceCollectionExtensions
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
         services.AddScoped<PaymentGatewayFactory>();
-        services.AddScoped<IPaymentService, PaymentService>();
-        services.AddScoped<IPaymentGateway, FlutterwaveGateway>();
-        services.AddScoped<IPaymentGateway, PaystackGateway>();
         services.AddHttpClient();
 
         // Register gateways
@@ -147,33 +144,31 @@ public static class IServiceCollectionExtensions
             switch (gateway)
             {
                 case PaymentGatewayType.Stripe:
-                    services.AddScoped<StripeGateway>();
+                    AddGatewayRegistration<StripeGateway>(services);
                     break;
                 case PaymentGatewayType.Paystack:
-                    services.AddScoped<PaystackGateway>();
+                    AddGatewayRegistration<PaystackGateway>(services);
                     break;
                 case PaymentGatewayType.Flutterwave:
-                    services.AddScoped<FlutterwaveGateway>();
+                    AddGatewayRegistration<FlutterwaveGateway>(services);
                     break;
                 case PaymentGatewayType.Checkout:
-                    services.AddScoped<CheckoutGateway>();
+                    AddGatewayRegistration<CheckoutGateway>(services);
                     break;
                 case PaymentGatewayType.BenefitPay:
-                    services.AddScoped<BenefitPayGateway>();
+                    AddGatewayRegistration<BenefitPayGateway>(services);
                     break;
                 case PaymentGatewayType.Knet:
-                    services.AddScoped<KnetGateway>();
+                    AddGatewayRegistration<KnetGateway>(services);
                     break;
                 case PaymentGatewayType.Monnify:
-                    services.AddScoped<MonnifyGateway>();
-                    services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<MonnifyGateway>());
+                    AddGatewayRegistration<MonnifyGateway>(services);
                     break;
                 case PaymentGatewayType.Squad:
-                    services.AddScoped<SquadGateway>();
+                    AddGatewayRegistration<SquadGateway>(services);
                     break;
                 case PaymentGatewayType.Korapay:
-                    services.AddScoped<KorapayGateway>();
-                    services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<KorapayGateway>());
+                    AddGatewayRegistration<KorapayGateway>(services);
                     break;
                 case PaymentGatewayType.Interswitch:
 services.AddScoped<InterswitchGateway>();
@@ -181,5 +176,26 @@ services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<InterswitchGatew
                     break;
             }
         }
+    }
+
+    private static void AddGatewayRegistration<TGateway>(IServiceCollection services)
+        where TGateway : class, IPaymentGateway
+    {
+        services.AddScoped<TGateway>();
+        services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<TGateway>());
+    }
+
+    private static string NormalizeProviderName(string provider)
+    {
+        return provider.Trim().ToLowerInvariant() switch
+        {
+            "mssql" => "SqlServer",
+            "sqlserver" => "SqlServer",
+            "postgres" => "Npgsql",
+            "postgresql" => "Npgsql",
+            "npgsql" => "Npgsql",
+            "mysql" => "MySql",
+            _ => provider
+        };
     }
 }
