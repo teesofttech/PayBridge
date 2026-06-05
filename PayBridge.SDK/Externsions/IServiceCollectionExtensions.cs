@@ -123,15 +123,18 @@ public static class IServiceCollectionExtensions
         // If no gateways are explicitly enabled, enable all available ones
         if (config.EnabledGateways.Count == 0)
         {
-            AddGatewayRegistration<StripeGateway>(services);
-            AddGatewayRegistration<PaystackGateway>(services);
-            AddGatewayRegistration<FlutterwaveGateway>(services);
-            AddGatewayRegistration<CheckoutGateway>(services);
-            AddGatewayRegistration<BenefitPayGateway>(services);
-            AddGatewayRegistration<KnetGateway>(services);
-            AddGatewayRegistration<MonnifyGateway>(services);
-            AddGatewayRegistration<SquadGateway>(services);
-            AddGatewayRegistration<KorapayGateway>(services);
+            services.AddScoped<StripeGateway>();
+            services.AddScoped<PaystackGateway>();
+            services.AddScoped<FlutterwaveGateway>();
+            services.AddScoped<CheckoutGateway>();
+            services.AddScoped<BenefitPayGateway>();
+            services.AddScoped<KnetGateway>();
+            services.AddScoped<MonnifyGateway>();
+            services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<MonnifyGateway>());
+            services.AddScoped<SquadGateway>();
+            services.AddScoped<KorapayGateway>();
+            services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<KorapayGateway>());
+            services.AddScoped<InterswitchGateway>();
             return;
         }
 
@@ -166,6 +169,10 @@ public static class IServiceCollectionExtensions
                     break;
                 case PaymentGatewayType.Korapay:
                     AddGatewayRegistration<KorapayGateway>(services);
+                    break;
+                case PaymentGatewayType.Interswitch:
+services.AddScoped<InterswitchGateway>();
+services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<InterswitchGateway>());
                     break;
             }
         }

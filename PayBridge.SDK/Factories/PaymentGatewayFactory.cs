@@ -44,6 +44,7 @@ public class PaymentGatewayFactory
             TryAddGateway(gateways, PaymentGatewayType.Monnify);
             TryAddGateway(gateways, PaymentGatewayType.Squad);
             TryAddGateway(gateways, PaymentGatewayType.Korapay);
+            TryAddGateway(gateways, PaymentGatewayType.Interswitch);
         }
         else
         {
@@ -86,6 +87,7 @@ public class PaymentGatewayFactory
                 PaymentGatewayType.Monnify => _serviceProvider.GetService<MonnifyGateway>(),
                 PaymentGatewayType.Squad => _serviceProvider.GetService<SquadGateway>(),
                 PaymentGatewayType.Korapay => _serviceProvider.GetService<KorapayGateway>(),
+                PaymentGatewayType.Interswitch => _serviceProvider.GetService<InterswitchGateway>(),
                 _ => null
             };
 

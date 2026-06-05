@@ -15,6 +15,7 @@ public class PaymentGatewayConfig
     public MonnifyConfig Monnify { get; set; } = new();
     public SquadConfig Squad { get; set; } = new();
     public KorapayConfig Korapay { get; set; } = new();
+    public InterswitchConfig Interswitch { get; set; } = new();
 }
 
 public class PaystackConfig
@@ -82,4 +83,25 @@ public class KorapayConfig
 {
     public string PublicKey { get; set; } = string.Empty;
     public string SecretKey { get; set; } = string.Empty;
+}
+
+public class InterswitchConfig
+{
+    public string ClientId { get; set; } = string.Empty;
+    public string ClientSecret { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Merchant code assigned to your Interswitch account.
+    /// </summary>
+    public string MerchantCode { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Payment item code for Quickteller / Webpay.
+    /// </summary>
+    public string PaymentItemCode { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Set to true to use Interswitch sandbox (test) environment.
+    /// </summary>
+    public bool IsSandbox { get; set; } = false;
 }
