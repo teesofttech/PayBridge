@@ -57,5 +57,10 @@ public enum PaymentGatewayType
     /// <summary>
     /// Interswitch payment gateway (Nigeria - Quickteller / Webpay)
     /// </summary>
-    Interswitch = 10
+    Interswitch = 10,
+
+    /// <summary>
+    /// Remita payment gateway (Nigeria)
+    /// </summary>
+    Remita = 11
 }
