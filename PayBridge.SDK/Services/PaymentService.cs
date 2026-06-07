@@ -249,7 +249,7 @@ public class PaymentService : IPaymentService
         switch (request.Currency?.ToUpper())
         {
             case "NGN":
-                return ChooseAvailableGateway(PaymentGatewayType.Monnify, PaymentGatewayType.Squad, PaymentGatewayType.Korapay, PaymentGatewayType.Interswitch, PaymentGatewayType.Remita, PaymentGatewayType.Paystack, PaymentGatewayType.Flutterwave);
+                return ChooseAvailableGateway(PaymentGatewayType.Monnify, PaymentGatewayType.Squad, PaymentGatewayType.Korapay, PaymentGatewayType.Interswitch, PaymentGatewayType.Remita, PaymentGatewayType.Opay, PaymentGatewayType.Paystack, PaymentGatewayType.Flutterwave);
 
             case "KES":
             case "GHS":
@@ -347,6 +347,10 @@ public class PaymentService : IPaymentService
             return PaymentGatewayType.Remita;
         }
 
+        if (transactionReference.StartsWith("OP_"))
+        {
+            return PaymentGatewayType.Opay;
+        }
         // Default to configured default gateway
         _logger.LogWarning("Could not determine gateway from reference: {Reference}", transactionReference);
         return _config.DefaultGateway;

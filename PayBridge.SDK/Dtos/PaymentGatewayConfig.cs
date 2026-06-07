@@ -17,6 +17,7 @@ public class PaymentGatewayConfig
     public KorapayConfig Korapay { get; set; } = new();
     public InterswitchConfig Interswitch { get; set; } = new();
     public RemitaConfig Remita { get; set; } = new();
+    public OpayConfig Opay { get; set; } = new();
 }
 
 public class PaystackConfig
@@ -112,5 +113,13 @@ public class RemitaConfig
     public string MerchantId { get; set; } = string.Empty;
     public string ServiceTypeId { get; set; } = string.Empty;
     public string ApiKey { get; set; } = string.Empty;
-    public bool IsSandbox { get; set; } = true;
+    public bool IsSandbox { get; set; } = false;
+}
+
+public class OpayConfig
+{
+    public string MerchantId { get; set; } = string.Empty;
+    public string PublicKey { get; set; } = string.Empty;
+    public string SecretKey { get; set; } = string.Empty;
+    public bool IsSandbox { get; set; } = false;
 }
