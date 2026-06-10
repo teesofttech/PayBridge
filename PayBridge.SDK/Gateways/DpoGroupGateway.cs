@@ -76,8 +76,7 @@ public class DpoGroupGateway : IPaymentGateway
             );
 
             var xmlString = xml.ToString();
-            _logger.LogDebug("DPO createToken request: {Xml}", xmlString);
-
+            _logger.LogDebug("DPO createToken request prepared for CompanyRef: {CompanyRef}", txRef);
             var content = new StringContent(xmlString, Encoding.UTF8, "application/xml");
             var response = await _httpClient.PostAsync(ApiUrl, content);
             var responseBody = await response.Content.ReadAsStringAsync();
