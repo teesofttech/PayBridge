@@ -49,8 +49,7 @@ public class DpoGroupGateway : IPaymentGateway
         {
             var txRef = $"{TxRefPrefix}{Guid.NewGuid():N}";
             var currency = request.Currency ?? _config.DpoGroup.PaymentCurrency;
-            var amount = request.Amount.ToString("F2");
-
+            var amount = request.Amount.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
             // Build XML payload for createToken
             var xml = new XDocument(
                 new XElement("API3G",
