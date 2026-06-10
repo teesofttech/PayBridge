@@ -181,7 +181,7 @@ services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<InterswitchGatew
                     services.AddScoped<OpayGateway>();
                     break;
                 case PaymentGatewayType.DpoGroup:
-                    services.AddScoped<DpoGroupGateway>();
+                    AddGatewayRegistration<DpoGroupGateway>(services);
                     break;
             }
         }
