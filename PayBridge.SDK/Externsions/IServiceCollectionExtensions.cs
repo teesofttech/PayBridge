@@ -137,6 +137,7 @@ public static class IServiceCollectionExtensions
             services.AddScoped<InterswitchGateway>();
             services.AddScoped<RemitaGateway>();
             services.AddScoped<OpayGateway>();
+            services.AddScoped<DpoGroupGateway>();
             return;
         }
 
@@ -181,6 +182,9 @@ services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<InterswitchGatew
                     break;
                 case PaymentGatewayType.Opay:
                     services.AddScoped<OpayGateway>();
+                    break;
+                case PaymentGatewayType.DpoGroup:
+                    services.AddScoped<DpoGroupGateway>();
                     break;
             }
         }
