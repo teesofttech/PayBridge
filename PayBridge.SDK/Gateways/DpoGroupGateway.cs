@@ -101,7 +101,7 @@ public class DpoGroupGateway : IPaymentGateway
             return new PaymentResponse
             {
                 Success = true,
-                TransactionReference = txRef,
+                TransactionReference = $"{TxRefPrefix}{transToken}",
                 CheckoutUrl = checkoutUrl,
                 Message = "Payment initiated successfully",
                 Status = PaymentStatus.Pending,
