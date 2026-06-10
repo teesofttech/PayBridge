@@ -193,7 +193,9 @@ public class DpoGroupGateway : IPaymentGateway
                 new XElement("API3G",
                     new XElement("CompanyToken", _config.DpoGroup.CompanyToken),
                     new XElement("Request", "refundToken"),
-                    new XElement("TransactionToken", request.TransactionReference),
+                    new XElement("TransactionToken", request.TransactionReference.StartsWith(TxRefPrefix, StringComparison.Ordinal)
+                        ? request.TransactionReference.Substring(TxRefPrefix.Length)
+                        : request.TransactionReference),
                     new XElement("refundAmount", request.Amount.ToString("F2")),
                     new XElement("refundDetails", request.Reason ?? "Customer request")
                 )
