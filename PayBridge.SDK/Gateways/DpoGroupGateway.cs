@@ -131,7 +131,9 @@ public class DpoGroupGateway : IPaymentGateway
                 new XElement("API3G",
                     new XElement("CompanyToken", _config.DpoGroup.CompanyToken),
                     new XElement("Request", "verifyToken"),
-                    new XElement("TransactionToken", transactionReference)
+                    new XElement("TransactionToken", transactionReference.StartsWith(TxRefPrefix, StringComparison.Ordinal)
+                        ? transactionReference.Substring(TxRefPrefix.Length)
+                        : transactionReference)
                 )
             );
 
