@@ -67,5 +67,10 @@ public enum PaymentGatewayType
     /// <summary>
     /// OPay payment gateway (Nigeria / Africa)
     /// </summary>
-    Opay = 12
+    Opay = 12,
+
+    /// <summary>
+    /// DPO Group payment gateway (Africa - 19+ countries)
+    /// </summary>
+    DpoGroup = 13
 }

@@ -47,6 +47,7 @@ public class PaymentGatewayFactory
             TryAddGateway(gateways, PaymentGatewayType.Interswitch);
             TryAddGateway(gateways, PaymentGatewayType.Remita);
             TryAddGateway(gateways, PaymentGatewayType.Opay);
+            TryAddGateway(gateways, PaymentGatewayType.DpoGroup);
         }
         else
         {
@@ -92,6 +93,7 @@ public class PaymentGatewayFactory
                 PaymentGatewayType.Interswitch => _serviceProvider.GetService<InterswitchGateway>(),
                 PaymentGatewayType.Remita => _serviceProvider.GetService<RemitaGateway>(),
                 PaymentGatewayType.Opay => _serviceProvider.GetService<OpayGateway>(),
+                PaymentGatewayType.DpoGroup => _serviceProvider.GetService<DpoGroupGateway>(),
                 _ => null
             };
 

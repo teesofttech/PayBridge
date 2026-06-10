@@ -18,6 +18,7 @@ public class PaymentGatewayConfig
     public InterswitchConfig Interswitch { get; set; } = new();
     public RemitaConfig Remita { get; set; } = new();
     public OpayConfig Opay { get; set; } = new();
+    public DpoGroupConfig DpoGroup { get; set; } = new();
 }
 
 public class PaystackConfig
@@ -121,5 +122,23 @@ public class OpayConfig
     public string MerchantId { get; set; } = string.Empty;
     public string PublicKey { get; set; } = string.Empty;
     public string SecretKey { get; set; } = string.Empty;
+    public bool IsSandbox { get; set; } = false;
+}
+
+public class DpoGroupConfig
+{
+    /// <summary>
+    /// DPO Company Token (from your DPO merchant account).
+    /// </summary>
+    public string CompanyToken { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Default payment currency (e.g. KES, GHS, UGX, ZAR, USD).
+    /// </summary>
+    public string PaymentCurrency { get; set; } = "USD";
+
+    /// <summary>
+    /// Set to true to use DPO sandbox environment.
+    /// </summary>
     public bool IsSandbox { get; set; } = false;
 }
