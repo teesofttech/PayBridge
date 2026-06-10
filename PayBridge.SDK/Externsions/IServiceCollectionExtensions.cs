@@ -135,10 +135,7 @@ public static class IServiceCollectionExtensions
             services.AddScoped<KorapayGateway>();
             services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<KorapayGateway>());
             services.AddScoped<InterswitchGateway>();
-            services.AddScoped<RemitaGateway>();
-            services.AddScoped<OpayGateway>();
-            services.AddScoped<DpoGroupGateway>();
-            return;
+            AddGatewayRegistration<DpoGroupGateway>(services);
         }
 
         // Register only the enabled gateways
