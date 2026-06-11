@@ -13,7 +13,7 @@ jobs:
 
     permissions:
       contents: read
-      id-token: write   # Required for trusted publisher (OIDC)
+      packages: write   # Required for GitHub Packages
 
     steps:
       - name: Checkout repository
@@ -24,14 +24,18 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
       - name: Restore dependencies
         run: dotnet restore PayBridge.SDK/PayBridge.SDK.csproj
 
       - name: Build (Release)
-        run: dotnet build PayBridge.SDK/PayBridge.SDK.csproj --configuration Release --no-restore
+        run: dotnet build PayBridge.SDK/PayBridge.SDK.csproj --configuration Release --no-restore -p:Version=${{ steps.version.outputs.version }}
 
       - name: Pack NuGet package
-        run: dotnet pack PayBridge.SDK/PayBridge.SDK.csproj --configuration Release --no-build --output ./nupkg
+        run: dotnet pack PayBridge.SDK/PayBridge.SDK.csproj --configuration Release --no-build --output ./nupkg -p:Version=${{ steps.version.outputs.version }}
 
-      - name: Publish to NuGet.org (Trusted Publisher)
-        run: dotnet nuget push ./nupkg/*.nupkg --source https://api.nuget.org/v3/index.json
+      - name: Push to NuGet.org
+        run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
