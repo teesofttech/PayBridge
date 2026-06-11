@@ -5,15 +5,36 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	<PackageId>PayBridge.SDK</PackageId>
+	<Version>1.1.0</Version>
+	<AssemblyVersion>1.1.0</AssemblyVersion>
+	<FileVersion>1.1.0</FileVersion>
 	<Authors>Babatunde Esanju</Authors>
 	<Company>Teesoftech</Company>
-	<PackageDescription>Seamlessly integrate multiple payment gateways into your ASP.NET Core applications.</PackageDescription>
+	<PackageDescription>Seamlessly integrate multiple payment gateways into your ASP.NET Core applications. v1.1.0 adds 7 new gateways: Monnify, Squad, Korapay, Interswitch, Remita, OPay, DPO Group, PawaPay.</PackageDescription>
 	<Description>Seamlessly integrate multiple payment gateways into your ASP.NET Core applications.</Description>
-	<PackageTags>payments; aspnetcore; fintech; sdk; paybridge</PackageTags>
+	<PackageTags>payments; aspnetcore; fintech; sdk; paybridge; nigeria; africa; flutterwave; paystack; stripe; monnify; opay; remita; interswitch; korapay; pawapay; dpo</PackageTags>
 	<RepositoryUrl>https://github.com/teesofttech/PayBridge</RepositoryUrl>
 	<RepositoryType>git</RepositoryType>
 	<PackageLicenseExpression>MIT</PackageLicenseExpression>
 	<PackageProjectUrl>https://github.com/teesofttech/PayBridge</PackageProjectUrl>
+	<PackageReleaseNotes>
+## v1.1.0 - New African &amp; Nigerian Payment Gateways
+
+### New Gateways
+- **Monnify** (Nigeria) — OAuth2 Bearer, NGN, bank transfer &amp; USSD
+- **Squad by GTCo** (Nigeria) — Static Bearer, NGN, cards &amp; transfers
+- **Korapay** (Nigeria/Africa) — Bearer, NGN, virtual accounts &amp; cards
+- **Interswitch / Quickteller** (Nigeria) — OAuth2 + HMAC-SHA512, NGN
+- **Remita** (Nigeria) — SHA512 hash auth, government &amp; corporate payments
+- **OPay** (Nigeria/Africa) — HMAC-SHA512 signed, mobile money &amp; cards
+- **DPO Group** (Africa, 19+ countries) — XML API v6, KES/GHS/UGX/ZAR/USD
+- **PawaPay** (Africa mobile money) — REST Bearer, GHS/TZS/UGX/RWF/ZMW and more
+
+### Improvements
+- Smart currency routing: NGN → Nigerian gateways, African currencies → DPO/PawaPay
+- Transaction reference prefix detection per gateway
+- Full create/verify/refund support for all new gateways
+	</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
