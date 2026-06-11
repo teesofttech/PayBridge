@@ -2,13 +2,13 @@
 <!--
   PayBridge test run settings.
 
-  Run only unit tests (no network required):
-    dotnet test --filter "Category=Unit"
+  Filter to unit tests only (no network required):
+    dotnet test -filter "Category=Unit"
 
-  Run only integration tests (requires env vars):
-    dotnet test --filter "Category=Integration"
+  Filter to integration tests only (requires env vars):
+    dotnet test -filter "Category=Integration"
 
-  Run everything:
+  Run everything with no filter:
     dotnet test
 -->
 <RunSettings>

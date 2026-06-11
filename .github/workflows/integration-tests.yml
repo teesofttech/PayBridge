@@ -72,8 +72,7 @@ jobs:
             --no-build \
             --filter "Category=Integration" \
             --logger "trx;LogFileName=integration-test-results.trx" \
-            --results-directory ./TestResults \
-            --settings PayBridge.SDK.Test/paybridge.runsettings
+            --results-directory ./TestResults
 
       - name: Upload integration test results
         uses: actions/upload-artifact@v4

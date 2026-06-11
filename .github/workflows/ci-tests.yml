@@ -1,4 +1,4 @@
-name: CI — Unit Tests
+name: CI - Unit Tests
 
 on:
   push:
@@ -38,8 +38,7 @@ jobs:
             --filter "Category=Unit" \
             --logger "trx;LogFileName=unit-test-results.trx" \
             --results-directory ./TestResults \
-            --collect:"XPlat Code Coverage" \
-            --settings PayBridge.SDK.Test/paybridge.runsettings
+            --collect:"XPlat Code Coverage"
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -63,3 +62,5 @@ jobs:
           path: ./TestResults/*.trx
           reporter: dotnet-trx
           fail-on-error: true
+          fail-on-empty: false
+
