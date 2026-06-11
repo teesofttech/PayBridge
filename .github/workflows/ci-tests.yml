@@ -1,0 +1,65 @@
+name: CI — Unit Tests
+
+on:
+  push:
+    branches:
+      - master
+      - 'feature/**'
+      - 'fix/**'
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  unit-tests:
+    name: Unit Tests (.NET 8)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore PayBridge.SDK.sln
+
+      - name: Build solution
+        run: dotnet build PayBridge.SDK.sln --configuration Release --no-restore
+
+      - name: Run unit tests
+        run: |
+          dotnet test PayBridge.SDK.Test/PayBridge.SDK.Test.csproj \
+            --configuration Release \
+            --no-build \
+            --filter "Category=Unit" \
+            --logger "trx;LogFileName=unit-test-results.trx" \
+            --results-directory ./TestResults \
+            --collect:"XPlat Code Coverage" \
+            --settings PayBridge.SDK.Test/paybridge.runsettings
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-results
+          path: ./TestResults/*.trx
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: ./TestResults/**/coverage.cobertura.xml
+
+      - name: Publish test results (PR comment)
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Unit Test Results
+          path: ./TestResults/*.trx
+          reporter: dotnet-trx
+          fail-on-error: true
