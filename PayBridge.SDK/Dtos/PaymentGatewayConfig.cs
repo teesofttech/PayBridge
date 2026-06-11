@@ -20,6 +20,7 @@ public class PaymentGatewayConfig
     public OpayConfig Opay { get; set; } = new();
     public DpoGroupConfig DpoGroup { get; set; } = new();
     public PawaPayConfig PawaPay { get; set; } = new();
+    public PeachPaymentsConfig PeachPayments { get; set; } = new();
 }
 
 public class PaystackConfig
@@ -153,6 +154,24 @@ public class PawaPayConfig
 
     /// <summary>
     /// Set to true to use PawaPay sandbox environment.
+    /// </summary>
+    public bool IsSandbox { get; set; } = false;
+}
+
+public class PeachPaymentsConfig
+{
+    /// <summary>
+    /// Peach Payments Entity ID (from your Peach Payments dashboard).
+    /// </summary>
+    public string EntityId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Peach Payments Access Token (Bearer token).
+    /// </summary>
+    public string AccessToken { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Set to true to use Peach Payments test/sandbox environment.
     /// </summary>
     public bool IsSandbox { get; set; } = false;
 }
