@@ -13,7 +13,7 @@ jobs:
 
     permissions:
       contents: read
-      id-token: write   # Required for OIDC Trusted Publishing (no API key needed)
+      id-token: write   # Required for OIDC Trusted Publishing — no API key stored
 
     steps:
       - name: Checkout repository
@@ -37,7 +37,17 @@ jobs:
       - name: Pack NuGet package
         run: dotnet pack PayBridge.SDK/PayBridge.SDK.csproj --configuration Release --no-build --output ./nupkg -p:Version=${{ steps.version.outputs.version }}
 
-      - name: Publish to NuGet.org (Trusted Publisher)
-        uses: nuget/publish-action@v1
-        with:
-          package-path: './nupkg/*.nupkg'
+      - name: Get OIDC token for NuGet.org
+        id: oidc
+        run: |
+          TOKEN=$(curl -sS "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=nuget.org" \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" | jq -r '.value')
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+
+      - name: Push to NuGet.org (Trusted Publisher)
+        run: |
+          dotnet nuget push ./nupkg/*.nupkg \
+            --api-key "${{ steps.oidc.outputs.token }}" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
+
