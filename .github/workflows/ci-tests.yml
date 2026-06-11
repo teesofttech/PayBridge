@@ -15,6 +15,11 @@ jobs:
     name: Unit Tests (.NET 8)
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read        # checkout
+      checks: write         # dorny/test-reporter — create check runs
+      pull-requests: write  # dorny/test-reporter — annotate PRs
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

@@ -17,7 +17,12 @@ jobs:
   integration-tests:
     name: Integration Tests (.NET 8)
     runs-on: ubuntu-latest
-    environment: integration   # Create this environment in repo Settings → Environments
+    environment: integration   # Create this environment in repo Settings > Environments
+
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
 
     steps:
       - name: Checkout repository
