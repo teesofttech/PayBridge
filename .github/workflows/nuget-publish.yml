@@ -13,7 +13,7 @@ jobs:
 
     permissions:
       contents: read
-      packages: write   # Required for GitHub Packages
+      id-token: write   # Required for OIDC Trusted Publishing (no API key needed)
 
     steps:
       - name: Checkout repository
@@ -37,5 +37,7 @@ jobs:
       - name: Pack NuGet package
         run: dotnet pack PayBridge.SDK/PayBridge.SDK.csproj --configuration Release --no-build --output ./nupkg -p:Version=${{ steps.version.outputs.version }}
 
-      - name: Push to NuGet.org
-        run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+      - name: Publish to NuGet.org (Trusted Publisher)
+        uses: nuget/publish-action@v1
+        with:
+          package-path: './nupkg/*.nupkg'
