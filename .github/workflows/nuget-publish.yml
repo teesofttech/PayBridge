@@ -12,7 +12,7 @@ jobs:
     environment: production
 
     permissions:
-      contents: read
+      contents: write   # Required to create/publish GitHub Releases
 
     steps:
       - name: Checkout repository
@@ -38,5 +38,15 @@ jobs:
 
       - name: Push to NuGet.org
         run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - name: Create & publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          make_latest: true
+          files: ./nupkg/*.nupkg
 
 
