@@ -1,0 +1,37 @@
+name: Publish to NuGet
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'   # Triggers on version tags like v1.1.0, v1.2.0, etc.
+
+jobs:
+  publish:
+    name: Build & Publish NuGet Package
+    runs-on: ubuntu-latest
+    environment: production
+
+    permissions:
+      contents: read
+      id-token: write   # Required for trusted publisher (OIDC)
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore PayBridge.SDK/PayBridge.SDK.csproj
+
+      - name: Build (Release)
+        run: dotnet build PayBridge.SDK/PayBridge.SDK.csproj --configuration Release --no-restore
+
+      - name: Pack NuGet package
+        run: dotnet pack PayBridge.SDK/PayBridge.SDK.csproj --configuration Release --no-build --output ./nupkg
+
+      - name: Publish to NuGet.org (Trusted Publisher)
+        run: dotnet nuget push ./nupkg/*.nupkg --source https://api.nuget.org/v3/index.json
