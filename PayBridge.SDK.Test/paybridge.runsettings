@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  PayBridge test run settings.
+
+  Run only unit tests (no network required):
+    dotnet test --filter "Category=Unit"
+
+  Run only integration tests (requires env vars):
+    dotnet test --filter "Category=Integration"
+
+  Run everything:
+    dotnet test
+-->
+<RunSettings>
+  <RunConfiguration>
+    <MaxCpuCount>0</MaxCpuCount>
+    <ResultsDirectory>./TestResults</ResultsDirectory>
+  </RunConfiguration>
+
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="Code Coverage" uri="datacollector://Microsoft/CodeCoverage/2.0">
+        <Configuration>
+          <CodeCoverage>
+            <ModulePaths>
+              <Include>
+                <ModulePath>.*PayBridge\.SDK\.dll</ModulePath>
+              </Include>
+              <Exclude>
+                <ModulePath>.*PayBridge\.SDK\.Test\.dll</ModulePath>
+              </Exclude>
+            </ModulePaths>
+          </CodeCoverage>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
