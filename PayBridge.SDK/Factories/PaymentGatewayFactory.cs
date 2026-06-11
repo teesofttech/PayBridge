@@ -48,6 +48,7 @@ public class PaymentGatewayFactory
             TryAddGateway(gateways, PaymentGatewayType.Remita);
             TryAddGateway(gateways, PaymentGatewayType.Opay);
             TryAddGateway(gateways, PaymentGatewayType.DpoGroup);
+            TryAddGateway(gateways, PaymentGatewayType.PawaPay);
         }
         else
         {
@@ -94,6 +95,7 @@ public class PaymentGatewayFactory
                 PaymentGatewayType.Remita => _serviceProvider.GetService<RemitaGateway>(),
                 PaymentGatewayType.Opay => _serviceProvider.GetService<OpayGateway>(),
                 PaymentGatewayType.DpoGroup => _serviceProvider.GetService<DpoGroupGateway>(),
+                PaymentGatewayType.PawaPay => _serviceProvider.GetService<PawaPayGateway>(),
                 _ => null
             };
 

@@ -72,5 +72,10 @@ public enum PaymentGatewayType
     /// <summary>
     /// DPO Group payment gateway (Africa - 19+ countries)
     /// </summary>
-    DpoGroup = 13
+    DpoGroup = 13,
+
+    /// <summary>
+    /// PawaPay payment gateway (Africa - mobile money)
+    /// </summary>
+    PawaPay = 14
 }

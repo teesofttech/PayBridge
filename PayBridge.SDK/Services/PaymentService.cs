@@ -257,7 +257,12 @@ public class PaymentService : IPaymentService
             case "TZS":
             case "ZAR":
             case "RWF":
-                return ChooseAvailableGateway(PaymentGatewayType.DpoGroup, PaymentGatewayType.Flutterwave, PaymentGatewayType.Paystack);
+            case "ZMW":
+            case "CDF":
+            case "XOF":
+            case "XAF":
+            case "MWK":
+                return ChooseAvailableGateway(PaymentGatewayType.PawaPay, PaymentGatewayType.DpoGroup, PaymentGatewayType.Flutterwave, PaymentGatewayType.Paystack);
 
             case "BHD":
                 return ChooseAvailableGateway(PaymentGatewayType.BenefitPay);
@@ -356,6 +361,11 @@ public class PaymentService : IPaymentService
         if (transactionReference.StartsWith("DPO_"))
         {
             return PaymentGatewayType.DpoGroup;
+        }
+
+        if (transactionReference.StartsWith("PP_"))
+        {
+            return PaymentGatewayType.PawaPay;
         }
         // Default to configured default gateway
         _logger.LogWarning("Could not determine gateway from reference: {Reference}", transactionReference);

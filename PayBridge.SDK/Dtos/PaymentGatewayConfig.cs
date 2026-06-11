@@ -19,6 +19,7 @@ public class PaymentGatewayConfig
     public RemitaConfig Remita { get; set; } = new();
     public OpayConfig Opay { get; set; } = new();
     public DpoGroupConfig DpoGroup { get; set; } = new();
+    public PawaPayConfig PawaPay { get; set; } = new();
 }
 
 public class PaystackConfig
@@ -139,6 +140,19 @@ public class DpoGroupConfig
 
     /// <summary>
     /// Set to true to use DPO sandbox environment.
+    /// </summary>
+    public bool IsSandbox { get; set; } = false;
+}
+
+public class PawaPayConfig
+{
+    /// <summary>
+    /// PawaPay API token (Bearer token from your PawaPay dashboard).
+    /// </summary>
+    public string ApiToken { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Set to true to use PawaPay sandbox environment.
     /// </summary>
     public bool IsSandbox { get; set; } = false;
 }
