@@ -39,7 +39,7 @@ public class TransactionRepository(PayBridgeDbContext dbContext, ILogger<Transac
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentTransaction> GetByReferenceAsync(string reference)
+    public async Task<PaymentTransaction?> GetByReferenceAsync(string reference)
     {
         if (string.IsNullOrEmpty(reference))
         {
@@ -49,8 +49,7 @@ public class TransactionRepository(PayBridgeDbContext dbContext, ILogger<Transac
         _logger.LogInformation("Getting transaction by reference: {Reference}", reference);
 
         return await _dbContext.Transactions
-            .FirstOrDefaultAsync(t => t.TransactionReference == reference)
-            ?? throw new TransactionNotFoundException(reference);
+            .FirstOrDefaultAsync(t => t.TransactionReference == reference);
     }
 
     /// <inheritdoc/>

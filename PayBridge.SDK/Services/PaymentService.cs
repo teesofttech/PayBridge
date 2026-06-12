@@ -38,6 +38,11 @@ public class PaymentService : IPaymentService
     {
         ValidateRequest(request);
 
+        if (_gateways.Count == 0)
+        {
+            throw new PaymentGatewayException("No payment gateways are configured");
+        }
+
         // Select gateway or use specified
         PaymentGatewayType selectedGateway = gateway != PaymentGatewayType.Automatic
             ? gateway

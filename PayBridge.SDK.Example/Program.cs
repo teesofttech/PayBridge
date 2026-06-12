@@ -80,7 +80,7 @@ builder.Services.AddSwaggerGen(c =>
 // This example shows PATTERN A so you can see how the config file maps to
 // the object model.
 
-builder.Services.AddPayBridge(config =>
+builder.Services.AddPayBridge(builder.Configuration, config =>
 {
     // Read all gateway keys from appsettings.json.
     // The SDK binds "PaymentGatewayConfig" automatically via IOptions.

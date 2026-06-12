@@ -16,7 +16,7 @@ public interface ITransactionRepository
     /// </summary>
     /// <param name="reference"></param>
     /// <returns></returns>
-    Task<PaymentTransaction> GetByReferenceAsync(string reference);
+    Task<PaymentTransaction?> GetByReferenceAsync(string reference);
 
     /// <summary>
     /// updates an existing payment transaction
