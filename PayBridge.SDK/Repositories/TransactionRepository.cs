@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using PayBridge.SDK.Entities;
 using PayBridge.SDK.Enums;
+using PayBridge.SDK.Exceptions;
 
 namespace PayBridge.SDK;
 public class TransactionRepository(PayBridgeDbContext dbContext, ILogger<TransactionRepository> logger) : ITransactionRepository
@@ -48,7 +49,8 @@ public class TransactionRepository(PayBridgeDbContext dbContext, ILogger<Transac
         _logger.LogInformation("Getting transaction by reference: {Reference}", reference);
 
         return await _dbContext.Transactions
-            .FirstOrDefaultAsync(t => t.TransactionReference == reference);
+            .FirstOrDefaultAsync(t => t.TransactionReference == reference)
+            ?? throw new TransactionNotFoundException(reference);
     }
 
     /// <inheritdoc/>

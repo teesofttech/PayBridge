@@ -5,19 +5,40 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	<PackageId>PayBridge.SDK</PackageId>
-	<Version>1.1.0</Version>
-	<AssemblyVersion>1.1.0</AssemblyVersion>
-	<FileVersion>1.1.0</FileVersion>
+	<Version>1.2.0</Version>
+	<AssemblyVersion>1.2.0</AssemblyVersion>
+	<FileVersion>1.2.0</FileVersion>
 	<Authors>Babatunde Esanju</Authors>
 	<Company>Teesoftech</Company>
-	<PackageDescription>Seamlessly integrate multiple payment gateways into your ASP.NET Core applications. v1.1.0 adds 7 new gateways: Monnify, Squad, Korapay, Interswitch, Remita, OPay, DPO Group, PawaPay.</PackageDescription>
+	<PackageDescription>Seamlessly integrate multiple payment gateways into your ASP.NET Core applications. v1.2.0 adds PeachPayments gateway, a full xUnit test suite (76 tests), CI/CD workflows, and codebase-wide nullable safety fixes.</PackageDescription>
 	<Description>Seamlessly integrate multiple payment gateways into your ASP.NET Core applications.</Description>
-	<PackageTags>payments; aspnetcore; fintech; sdk; paybridge; nigeria; africa; flutterwave; paystack; stripe; monnify; opay; remita; interswitch; korapay; pawapay; dpo</PackageTags>
+	<PackageTags>payments; aspnetcore; fintech; sdk; paybridge; nigeria; africa; flutterwave; paystack; stripe; monnify; opay; remita; interswitch; korapay; pawapay; dpo; peachpayments; southafrica</PackageTags>
 	<RepositoryUrl>https://github.com/teesofttech/PayBridge</RepositoryUrl>
 	<RepositoryType>git</RepositoryType>
 	<PackageLicenseExpression>MIT</PackageLicenseExpression>
 	<PackageProjectUrl>https://github.com/teesofttech/PayBridge</PackageProjectUrl>
 	<PackageReleaseNotes>
+## v1.2.0 - PeachPayments Gateway + Test Suite + Nullable Safety
+
+### New Gateway
+- **PeachPayments** (South Africa, Kenya, Nigeria, Botswana) — Bearer auth, ZAR/KES/NGN/BWP/USD, hosted checkout, sandbox &amp; live environments
+
+### Test Suite (76 unit tests, CI/CD)
+- xUnit 2.9.2 test project with Moq, FluentAssertions, coverlet
+- MockHttpMessageHandler — queue-based HTTP interception (no network)
+- GatewayConfigFactory — config builders for all 15 gateways
+- 27 unit tests for PeachPaymentsGateway (constructor, create, verify, refund)
+- 15 unit tests for GatewayExtractor webhook detection
+- 14 unit tests for PaymentGatewayFactory DI wiring
+- 20 unit tests for shared test infrastructure
+- GitHub Actions CI: unit tests on every push/PR, integration tests nightly/manual
+
+### Bug Fixes &amp; Quality
+- Resolved all CS8618/CS8600/CS8601/CS8603/CS8604 nullable warnings (0 remaining)
+- Initialized all DTO/entity/model string properties to string.Empty
+- Made exception contextual properties correctly nullable
+- Fixed PaystackGateway JsonElement.GetString() null propagation
+
 ## v1.1.0 - New African &amp; Nigerian Payment Gateways
 
 ### New Gateways
@@ -29,11 +50,6 @@
 - **OPay** (Nigeria/Africa) — HMAC-SHA512 signed, mobile money &amp; cards
 - **DPO Group** (Africa, 19+ countries) — XML API v6, KES/GHS/UGX/ZAR/USD
 - **PawaPay** (Africa mobile money) — REST Bearer, GHS/TZS/UGX/RWF/ZMW and more
-
-### Improvements
-- Smart currency routing: NGN → Nigerian gateways, African currencies → DPO/PawaPay
-- Transaction reference prefix detection per gateway
-- Full create/verify/refund support for all new gateways
 	</PackageReleaseNotes>
   </PropertyGroup>
 
