@@ -139,6 +139,7 @@ public static class IServiceCollectionExtensions
             services.AddScoped<RemitaGateway>();
             services.AddScoped<OpayGateway>();
             services.AddScoped<PawaPayGateway>();
+            services.AddScoped<PeachPaymentsGateway>();
             return;
         }
 
@@ -189,6 +190,9 @@ services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<InterswitchGatew
                     break;
                 case PaymentGatewayType.PawaPay:
                     services.AddScoped<PawaPayGateway>();
+                    break;
+                case PaymentGatewayType.PeachPayments:
+                    services.AddScoped<PeachPaymentsGateway>();
                     break;
             }
         }

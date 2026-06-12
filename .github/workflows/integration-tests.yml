@@ -1,0 +1,96 @@
+name: Integration Tests
+
+on:
+  # Run manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      gateway:
+        description: 'Gateway to test (e.g. paystack, flutterwave, all)'
+        required: false
+        default: 'all'
+
+  # Also run nightly on master so regressions are caught early
+  schedule:
+    - cron: '0 2 * * *'   # 02:00 UTC every day
+
+jobs:
+  integration-tests:
+    name: Integration Tests (.NET 8)
+    runs-on: ubuntu-latest
+    environment: integration   # Create this environment in repo Settings > Environments
+
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore PayBridge.SDK.sln
+
+      - name: Build solution
+        run: dotnet build PayBridge.SDK.sln --configuration Release --no-restore
+
+      - name: Run integration tests
+        env:
+          # ── Nigerian gateways ────────────────────────────────────────────────
+          PAYSTACK_SECRET_KEY:          ${{ secrets.PAYSTACK_SECRET_KEY }}
+          FLUTTERWAVE_SECRET_KEY:       ${{ secrets.FLUTTERWAVE_SECRET_KEY }}
+          MONNIFY_API_KEY:              ${{ secrets.MONNIFY_API_KEY }}
+          MONNIFY_SECRET_KEY:           ${{ secrets.MONNIFY_SECRET_KEY }}
+          MONNIFY_CONTRACT_CODE:        ${{ secrets.MONNIFY_CONTRACT_CODE }}
+          SQUAD_SECRET_KEY:             ${{ secrets.SQUAD_SECRET_KEY }}
+          SQUAD_IS_SANDBOX:             'true'
+          KORAPAY_SECRET_KEY:           ${{ secrets.KORAPAY_SECRET_KEY }}
+          INTERSWITCH_CLIENT_ID:        ${{ secrets.INTERSWITCH_CLIENT_ID }}
+          INTERSWITCH_CLIENT_SECRET:    ${{ secrets.INTERSWITCH_CLIENT_SECRET }}
+          REMITA_MERCHANT_ID:           ${{ secrets.REMITA_MERCHANT_ID }}
+          REMITA_API_KEY:               ${{ secrets.REMITA_API_KEY }}
+          REMITA_SERVICE_TYPE_ID:       ${{ secrets.REMITA_SERVICE_TYPE_ID }}
+          OPAY_MERCHANT_ID:             ${{ secrets.OPAY_MERCHANT_ID }}
+          OPAY_PUBLIC_KEY:              ${{ secrets.OPAY_PUBLIC_KEY }}
+          OPAY_PRIVATE_KEY:             ${{ secrets.OPAY_PRIVATE_KEY }}
+          # ── African / global gateways ────────────────────────────────────────
+          DPO_COMPANY_TOKEN:            ${{ secrets.DPO_COMPANY_TOKEN }}
+          DPO_SERVICE_TYPE:             ${{ secrets.DPO_SERVICE_TYPE }}
+          PAWAPAY_API_TOKEN:            ${{ secrets.PAWAPAY_API_TOKEN }}
+          PEACH_ENTITY_ID:              ${{ secrets.PEACH_ENTITY_ID }}
+          PEACH_ACCESS_TOKEN:           ${{ secrets.PEACH_ACCESS_TOKEN }}
+          # ── Global gateways ──────────────────────────────────────────────────
+          STRIPE_SECRET_KEY:            ${{ secrets.STRIPE_SECRET_KEY }}
+          CHECKOUT_SECRET_KEY:          ${{ secrets.CHECKOUT_SECRET_KEY }}
+          BENEFITPAY_MERCHANT_ID:       ${{ secrets.BENEFITPAY_MERCHANT_ID }}
+          BENEFITPAY_API_KEY:           ${{ secrets.BENEFITPAY_API_KEY }}
+          KNET_TRANSPORT_ID:            ${{ secrets.KNET_TRANSPORT_ID }}
+          KNET_PASSWORD:                ${{ secrets.KNET_PASSWORD }}
+        run: |
+          dotnet test PayBridge.SDK.Test/PayBridge.SDK.Test.csproj \
+            --configuration Release \
+            --no-build \
+            --filter "Category=Integration" \
+            --logger "trx;LogFileName=integration-test-results.trx" \
+            --results-directory ./TestResults
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results
+          path: ./TestResults/*.trx
+
+      - name: Publish test results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Integration Test Results
+          path: ./TestResults/*.trx
+          reporter: dotnet-trx
+          fail-on-error: false   # don't fail the workflow if sandbox keys are missing

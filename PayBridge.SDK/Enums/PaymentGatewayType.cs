@@ -77,5 +77,10 @@ public enum PaymentGatewayType
     /// <summary>
     /// PawaPay payment gateway (Africa - mobile money)
     /// </summary>
-    PawaPay = 14
+    PawaPay = 14,
+
+    /// <summary>
+    /// Peach Payments gateway (South Africa, Kenya, Nigeria)
+    /// </summary>
+    PeachPayments = 15
 }
