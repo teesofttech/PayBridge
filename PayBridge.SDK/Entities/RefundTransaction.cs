@@ -6,17 +6,17 @@ public class RefundTransaction
     /// <summary>
     /// Unique identifier for the refund
     /// </summary>
-    public string Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 
     /// <summary>
     /// Reference provided by the payment gateway
     /// </summary>
-    public string RefundReference { get; set; }
+    public string RefundReference { get; set; } = string.Empty;
 
     /// <summary>
     /// Reference to the original payment transaction
     /// </summary>
-    public string PaymentTransactionReference { get; set; }
+    public string PaymentTransactionReference { get; set; } = string.Empty;
 
     /// <summary>
     /// Amount refunded
@@ -26,12 +26,12 @@ public class RefundTransaction
     /// <summary>
     /// Currency code
     /// </summary>
-    public string Currency { get; set; }
+    public string Currency { get; set; } = string.Empty;
 
     /// <summary>
     /// Reason for the refund
     /// </summary>
-    public string Reason { get; set; }
+    public string Reason { get; set; } = string.Empty;
 
     /// <summary>
     /// Current status of the refund
@@ -46,7 +46,7 @@ public class RefundTransaction
     /// <summary>
     /// Raw response from the payment gateway
     /// </summary>
-    public string GatewayResponse { get; set; }
+    public string GatewayResponse { get; set; } = string.Empty;
 
     /// <summary>
     /// When the refund was created

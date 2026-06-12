@@ -6,22 +6,22 @@ public class PaymentMethod
     /// <summary>
     /// Unique identifier for the payment method
     /// </summary>
-    public string Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 
     /// <summary>
     /// Reference provided by the payment gateway
     /// </summary>
-    public string PaymentMethodReference { get; set; }
+    public string PaymentMethodReference { get; set; } = string.Empty;
 
     /// <summary>
     /// Customer email associated with this payment method
     /// </summary>
-    public string CustomerEmail { get; set; }
+    public string CustomerEmail { get; set; } = string.Empty;
 
     /// <summary>
     /// Customer name associated with this payment method
     /// </summary>
-    public string CustomerName { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
 
     /// <summary>
     /// Type of payment method
@@ -31,22 +31,22 @@ public class PaymentMethod
     /// <summary>
     /// Last 4 digits (for cards)
     /// </summary>
-    public string Last4 { get; set; }
+    public string Last4 { get; set; } = string.Empty;
 
     /// <summary>
     /// Expiry month (for cards)
     /// </summary>
-    public string ExpiryMonth { get; set; }
+    public string ExpiryMonth { get; set; } = string.Empty;
 
     /// <summary>
     /// Expiry year (for cards)
     /// </summary>
-    public string ExpiryYear { get; set; }
+    public string ExpiryYear { get; set; } = string.Empty;
 
     /// <summary>
     /// Card brand or bank name
     /// </summary>
-    public string Brand { get; set; }
+    public string Brand { get; set; } = string.Empty;
 
     /// <summary>
     /// Payment gateway used for this payment method

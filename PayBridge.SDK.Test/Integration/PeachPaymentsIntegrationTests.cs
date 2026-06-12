@@ -16,7 +16,7 @@ namespace PayBridge.SDK.Test.Integration;
 [Trait("Category", "Integration")]
 public class PeachPaymentsIntegrationTests : IntegrationTestBase
 {
-    private readonly PeachPaymentsGateway _gateway;
+    private readonly PeachPaymentsGateway? _gateway;
 
     public PeachPaymentsIntegrationTests()
         : base("PEACH_ENTITY_ID", "PEACH_ACCESS_TOKEN")
@@ -50,7 +50,7 @@ public class PeachPaymentsIntegrationTests : IntegrationTestBase
             r.CustomerName  = "Sandbox Test";
         });
 
-        var result = await _gateway.CreatePaymentAsync(request);
+        var result = await _gateway!.CreatePaymentAsync(request);
 
         result.Should().NotBeNull();
         result.TransactionReference.Should().StartWith("PEACH_");
@@ -74,7 +74,7 @@ public class PeachPaymentsIntegrationTests : IntegrationTestBase
             r.Currency = "ZAR";
         });
 
-        var created = await _gateway.CreatePaymentAsync(createRequest);
+        var created = await _gateway!.CreatePaymentAsync(createRequest);
         created.Success.Should().BeTrue(because: "need a valid sandbox payment to verify");
 
         // Then verify it — it will be Pending as no card was entered

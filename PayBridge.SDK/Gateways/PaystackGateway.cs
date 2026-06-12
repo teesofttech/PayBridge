@@ -90,17 +90,17 @@ public class PaystackGateway : IPaymentGateway
                     TransactionReference = paystackRequest.reference,
                     Message = "Payment initiated successfully",
                     Status = PaymentStatus.Pending,
-                    CheckoutUrl = data.GetProperty("authorization_url").GetString(),
+                    CheckoutUrl = data.GetProperty("authorization_url").GetString() ?? string.Empty,
                     GatewayResponse = new Dictionary<string, string>
                     {
-                        { "access_code", data.GetProperty("access_code").GetString() }
+                        { "access_code", data.GetProperty("access_code").GetString() ?? string.Empty }
                     }
                 };
             }
             else
             {
                 string errorMessage = root.TryGetProperty("message", out var message)
-                    ? message.GetString()
+                    ? message.GetString() ?? "Unknown error occurred"
                     : "Unknown error occurred";
 
                 _logger.LogError("Paystack payment initiation failed: {Error}", errorMessage);
@@ -155,16 +155,16 @@ public class PaystackGateway : IPaymentGateway
                     Status = paymentStatus,
                     Amount = data.GetProperty("amount").GetDecimal() / 100,
                     AmountSettled = data.GetProperty("amount").GetDecimal() / 100,
-                    Currency = data.GetProperty("currency").GetString(),
+                    Currency = data.GetProperty("currency").GetString() ?? string.Empty,
                     PaymentDate = data.TryGetProperty("paid_at", out var paidAt) && !string.IsNullOrEmpty(paidAt.GetString())
-                        ? DateTime.Parse(paidAt.GetString())
+                        ? DateTime.Parse(paidAt.GetString()!)
                         : DateTime.UtcNow,
                     GatewayResponse = new Dictionary<string, string>
                     {
-                        { "channel", data.GetProperty("channel").GetString() },
-                        { "gateway_response", data.GetProperty("gateway_response").GetString() },
+                        { "channel", data.GetProperty("channel").GetString() ?? string.Empty },
+                        { "gateway_response", data.GetProperty("gateway_response").GetString() ?? string.Empty },
                     },
-                    PaymentMethod = data.GetProperty("channel").GetString(),
+                    PaymentMethod = data.GetProperty("channel").GetString() ?? string.Empty,
                     Fee = data.TryGetProperty("fees", out var fee) ? fee.GetDecimal() / 100 : 0,
                     Metadata = data.TryGetProperty("metadata", out var meta) && meta.TryGetProperty("additional_info", out var additionalInfo)
                         ? JsonSerializer.Deserialize<Dictionary<string, string>>(additionalInfo.GetRawText())!
@@ -175,7 +175,7 @@ public class PaystackGateway : IPaymentGateway
             else
             {
                 string errorMessage = root.TryGetProperty("message", out var message)
-                    ? message.GetString()
+                    ? message.GetString() ?? "Unknown error occurred during verification"
                     : "Unknown error occurred during verification";
 
                 _logger.LogError("Paystack verification failed: {Error}", errorMessage);
@@ -230,19 +230,19 @@ public class PaystackGateway : IPaymentGateway
                 return new RefundResponse
                 {
                     Success = true,
-                    RefundReference = data.GetProperty("id").GetString(),
+                    RefundReference = data.GetProperty("id").GetString() ?? string.Empty,
                     Message = "Refund processed successfully",
-                    Amount = data.GetProperty("amount").GetDecimal() / 100, // Convert from kobo
+                    Amount = data.GetProperty("amount").GetDecimal() / 100,
                     Status = PaymentStatus.Refunded,
                     RefundDate = data.TryGetProperty("created_at", out var createdAt)
-                        ? DateTime.Parse(createdAt.GetString())
+                        ? DateTime.Parse(createdAt.GetString()!)
                         : DateTime.UtcNow
                 };
             }
             else
             {
                 string errorMessage = root.TryGetProperty("message", out var message)
-                    ? message.GetString()
+                    ? message.GetString() ?? "Unknown error occurred during refund"
                     : "Unknown error occurred during refund";
 
                 _logger.LogError("Paystack refund failed: {Error}", errorMessage);

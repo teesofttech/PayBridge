@@ -66,7 +66,7 @@ public static class GatewayExtractor
     /// Extracts the transaction reference from the webhook notification
     /// based on the gateway that sent it
     /// </summary>
-    public static string ExtractReferenceFromWebhook(object webhookData, PaymentGatewayType gateway)
+    public static string? ExtractReferenceFromWebhook(object webhookData, PaymentGatewayType gateway)
     {
         // Convert to dynamic to inspect properties
         dynamic data = webhookData;

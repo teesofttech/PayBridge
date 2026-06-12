@@ -10,17 +10,17 @@ public class SavePaymentMethodRequest
     /// <summary>
     /// Email address of the customer
     /// </summary>
-    public string CustomerEmail { get; set; }
+    public string CustomerEmail { get; set; } = string.Empty;
 
     /// <summary>
     /// Name of the customer
     /// </summary>
-    public string CustomerName { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
 
     /// <summary>
     /// Token from the gateway's client-side SDK
     /// </summary>
-    public string Token { get; set; }
+    public string Token { get; set; } = string.Empty;
 
     /// <summary>
     /// Type of payment method
