@@ -4,7 +4,7 @@ internal class PaymentGatewayException : PayBridgeException
     /// <summary>
     /// Gets the payment gateway where the error occurred
     /// </summary>
-    public string Gateway { get; }
+    public string? Gateway { get; }
 
     /// <summary>
     /// Creates a new instance of the PaymentGatewayException class

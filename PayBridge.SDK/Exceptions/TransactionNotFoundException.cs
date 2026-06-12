@@ -4,7 +4,7 @@ internal class TransactionNotFoundException : PayBridgeException
     /// <summary>
     /// Gets the transaction reference that was not found
     /// </summary>
-    public string TransactionReference { get; }
+    public string? TransactionReference { get; }
 
     /// <summary>
     /// Creates a new instance of the TransactionNotFoundException class

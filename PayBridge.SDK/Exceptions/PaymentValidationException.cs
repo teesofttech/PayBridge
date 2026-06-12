@@ -4,7 +4,7 @@ internal class PaymentValidationException : PayBridgeException
     /// <summary>
     /// Gets the validation error details
     /// </summary>
-    public string[] ValidationErrors { get; }
+    public string[]? ValidationErrors { get; }
 
     /// <summary>
     /// Creates a new instance of the PaymentValidationException class

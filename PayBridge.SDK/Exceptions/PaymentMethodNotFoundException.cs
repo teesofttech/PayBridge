@@ -4,7 +4,7 @@ internal class PaymentMethodNotFoundException : PayBridgeException
     /// <summary>
     /// Gets the payment method ID that was not found
     /// </summary>
-    public string PaymentMethodId { get; }
+    public string? PaymentMethodId { get; }
 
     /// <summary>
     /// Creates a new instance of the PaymentMethodNotFoundException class

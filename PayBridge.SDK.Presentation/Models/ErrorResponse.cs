@@ -8,10 +8,10 @@ public class ErrorResponse
     /// <summary>
     /// Human-readable error message
     /// </summary>
-    public string Message { get; set; }
+    public string Message { get; set; } = string.Empty;
 
     /// <summary>
     /// Machine-readable error code
     /// </summary>
-    public string ErrorCode { get; set; }
+    public string ErrorCode { get; set; } = string.Empty;
 }
