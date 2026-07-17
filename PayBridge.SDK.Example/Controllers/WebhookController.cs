@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http.Extensions;
+using System.Text.Json;
+using PayBridge.SDK.Dtos.Webhooks;
 using PayBridge.SDK.Enums;
 using PayBridge.SDK.Example.Models;
 using PayBridge.SDK.Example.Services;
@@ -14,8 +17,8 @@ namespace PayBridge.SDK.Example.Controllers;
 /// as <c>webhookUrl</c> in the payment request. This controller demonstrates:
 ///
 /// 1. How to receive the raw webhook body.
-/// 2. How to detect which gateway sent it (using <see cref="GatewayExtractor"/>).
-/// 3. How to extract the transaction reference.
+/// 2. How to verify the provider signature before parsing the body.
+/// 3. How to extract the transaction reference after authentication.
 /// 4. How to call <c>IPaymentService.VerifyPaymentAsync</c> to confirm status.
 /// 5. How to update your business logic (order fulfilment) on confirmation.
 ///
@@ -28,7 +31,7 @@ namespace PayBridge.SDK.Example.Controllers;
 ///   • localtunnel:  lt --port 7252
 ///
 /// Then supply the generated URL as <c>webhookUrl</c> when creating a payment,
-/// e.g. "https://abcd1234.ngrok.io/api/webhook".
+/// e.g. "https://abcd1234.ngrok.io/api/webhook/Paystack".
 /// </summary>
 [ApiController]
 [Route("api/webhook")]
@@ -36,30 +39,33 @@ namespace PayBridge.SDK.Example.Controllers;
 public class WebhookController : ControllerBase
 {
     private readonly IPaymentService _payment;
-    private readonly OrderService    _orders;
+    private readonly IWebhookSignatureVerifier _webhookVerifier;
+    private readonly OrderService _orders;
     private readonly ILogger<WebhookController> _log;
 
     public WebhookController(
         IPaymentService paymentService,
-        OrderService    orderService,
+        IWebhookSignatureVerifier webhookVerifier,
+        OrderService orderService,
         ILogger<WebhookController> logger)
     {
         _payment = paymentService;
-        _orders  = orderService;
-        _log     = logger;
+        _webhookVerifier = webhookVerifier;
+        _orders = orderService;
+        _log = logger;
     }
 
-    // ── POST /api/webhook ────────────────────────────────────────────────────
+    // ── POST /api/webhook/{gateway} ──────────────────────────────────────────
 
     /// <summary>
     /// Receives a webhook notification from any supported payment gateway.
     ///
-    /// The SDK auto-detects the gateway from the webhook body structure, so you
-    /// don't need a separate endpoint per gateway.
+    /// The gateway is explicit in the route so its signature can be verified
+    /// before the JSON body is parsed.
     ///
-    /// **Important:** Always return HTTP 200 quickly — gateways will retry if
-    /// they don't receive a timely 2xx response. Heavy processing should be
-    /// offloaded to a background queue in production.
+    /// **Important:** Reject unauthenticated deliveries, then acknowledge valid
+    /// deliveries quickly. Heavy processing should be offloaded to a background
+    /// queue in production because gateways retry slow or failed deliveries.
     /// </summary>
     /// <remarks>
     /// The body format varies per gateway. Some examples:
@@ -76,71 +82,122 @@ public class WebhookController : ControllerBase
     ///
     ///     { "type": "payment_intent.succeeded", "data": { "object": { ... } } }
     /// </remarks>
-    [HttpPost]
+    [HttpPost("{gateway}")]
+    [RequestSizeLimit(1_048_576)]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Receive([FromBody] object webhookBody)
+    public async Task<IActionResult> Receive(
+        PaymentGatewayType gateway,
+        CancellationToken cancellationToken)
     {
-        _log.LogInformation("Webhook received");
+        // Preserve the exact bytes. Parsing or reserializing before verification
+        // changes the signed content and invalidates raw-body signatures.
+        using var bodyBuffer = new MemoryStream();
+        await Request.Body.CopyToAsync(bodyBuffer, cancellationToken);
+        var rawBody = bodyBuffer.ToArray();
 
-        // ── Step 1: detect which gateway sent this ────────────────────────────
-        //
-        // GatewayExtractor inspects well-known webhook fingerprints (e.g. the
-        // presence of an "event" key for Paystack, "flw_ref" for Flutterwave).
-        var gateway = GatewayExtractor.DetectGatewayFromWebhook(webhookBody);
+        var headers = Request.Headers.ToDictionary(
+            header => header.Key,
+            header => header.Value.ToString(),
+            StringComparer.OrdinalIgnoreCase);
+        var verification = _webhookVerifier.Verify(new WebhookVerificationRequest(
+            gateway,
+            rawBody,
+            headers,
+            Request.Method,
+            Request.GetDisplayUrl()));
 
-        _log.LogInformation("Detected gateway: {Gateway}", gateway);
-
-        // ── Step 2: extract the transaction reference ─────────────────────────
-        var reference = GatewayExtractor.ExtractReferenceFromWebhook(webhookBody, gateway);
-
-        if (string.IsNullOrWhiteSpace(reference))
-        {
-            _log.LogWarning("Could not extract transaction reference from webhook body");
-            // Return 200 anyway — returning 4xx can trigger gateway retries
-            return Ok(new { received = true, processed = false, reason = "no_reference" });
-        }
-
-        _log.LogInformation("Transaction reference: {Reference}", reference);
-
-        // ── Step 3: verify the payment with the gateway ───────────────────────
-        //
-        // NEVER trust the webhook body alone — always call VerifyPaymentAsync to
-        // confirm the transaction status server-side before fulfilling the order.
-        var verification = await _payment.VerifyPaymentAsync(reference, gateway);
-
-        if (!verification.Success || verification.Status != PaymentStatus.Successful)
+        if (!verification.IsValid)
         {
             _log.LogWarning(
-                "Webhook for {Reference} — verification failed or status={Status}",
-                reference, verification.Status);
-
-            return Ok(new { received = true, processed = false, status = verification.Status.ToString() });
+                "Rejected unauthenticated {Gateway} webhook: {Reason}",
+                gateway,
+                verification.FailureReason);
+            return Unauthorized(new { received = false, reason = "invalid_signature" });
         }
 
-        // ── Step 4: fulfil the order ──────────────────────────────────────────
-        //
-        // Look up the order using the orderId we embedded in Metadata, then mark
-        // it as paid. In a real app you'd:
-        //   • Send a confirmation email
-        //   • Provision the purchased product / subscription
-        //   • Emit a domain event for downstream services
-        var orderId = verification.Metadata.GetValueOrDefault("orderId")
-                   ?? _orders.GetByTransactionRef(reference)?.OrderId;
-
-        if (orderId is not null)
+        JsonDocument webhookBody;
+        try
         {
-            _orders.MarkAsPaid(orderId, reference);
-            _log.LogInformation("Order {OrderId} marked as paid ✓", orderId);
+            webhookBody = JsonDocument.Parse(rawBody);
         }
-        else
+        catch (JsonException)
         {
-            _log.LogWarning(
-                "Verified payment {Reference} but could not find a matching order",
+            _log.LogWarning("Rejected malformed {Gateway} webhook JSON", gateway);
+            return BadRequest(new { received = false, reason = "invalid_json" });
+        }
+
+        using (webhookBody)
+        {
+            var reference = GatewayExtractor.ExtractReferenceFromWebhook(
+                webhookBody.RootElement,
+                gateway);
+
+            if (string.IsNullOrWhiteSpace(reference))
+            {
+                _log.LogWarning(
+                    "Authenticated {Gateway} webhook did not contain a transaction reference",
+                    gateway);
+                return BadRequest(new { received = true, processed = false, reason = "no_reference" });
+            }
+
+            _log.LogInformation(
+                "Authenticated {Gateway} webhook for {Reference}",
+                gateway,
                 reference);
-        }
 
-        // ── Step 5: return 200 immediately ────────────────────────────────────
-        return Ok(new { received = true, processed = true, reference, gateway = gateway.ToString() });
+            // ── Step 3: verify the payment with the gateway ───────────────────────
+            //
+            // NEVER trust the webhook body alone — always call VerifyPaymentAsync to
+            // confirm the transaction status server-side before fulfilling the order.
+            var paymentVerification = await _payment.VerifyPaymentAsync(reference, gateway);
+
+            if (!paymentVerification.Success ||
+                paymentVerification.Status != PaymentStatus.Successful)
+            {
+                _log.LogWarning(
+                    "Webhook for {Reference} — verification failed or status={Status}",
+                    reference,
+                    paymentVerification.Status);
+
+                return Ok(new
+                {
+                    received = true,
+                    processed = false,
+                    status = paymentVerification.Status.ToString()
+                });
+            }
+
+            // ── Step 4: fulfil the order ──────────────────────────────────────────
+            //
+            // Look up the order using the orderId we embedded in Metadata, then mark
+            // it as paid. In a real app you'd:
+            //   • Send a confirmation email
+            //   • Provision the purchased product / subscription
+            //   • Emit a domain event for downstream services
+            var orderId = paymentVerification.Metadata.GetValueOrDefault("orderId")
+                       ?? _orders.GetByTransactionRef(reference)?.OrderId;
+
+            if (orderId is not null)
+            {
+                _orders.MarkAsPaid(orderId, reference);
+                _log.LogInformation("Order {OrderId} marked as paid ✓", orderId);
+            }
+            else
+            {
+                _log.LogWarning(
+                    "Verified payment {Reference} but could not find a matching order",
+                    reference);
+            }
+
+            return Ok(new
+            {
+                received = true,
+                processed = true,
+                reference,
+                gateway = gateway.ToString()
+            });
+        }
     }
 }

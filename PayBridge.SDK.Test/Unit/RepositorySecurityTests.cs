@@ -20,6 +20,8 @@ public class RepositorySecurityTests
         "Password",
         "PrivateKey",
         "SecretKey",
+        "WebhookSecret",
+        "WebhookSecretHash",
         "TerminalResourceKey"
     };
 

@@ -1,7 +1,9 @@
 using PayBridge.SDK.Constants;
 using PayBridge.SDK.Enums;
+using System.Text.Json;
 
 namespace PayBridge.SDK.Helper;
+
 public static class GatewayExtractor
 {
 
@@ -122,6 +124,53 @@ public static class GatewayExtractor
         {
             return null;
         }
+    }
+
+    /// <summary>
+    /// Extracts a transaction reference from an authenticated raw JSON webhook.
+    /// </summary>
+    public static string? ExtractReferenceFromWebhook(JsonElement webhookData, PaymentGatewayType gateway)
+    {
+        return gateway switch
+        {
+            PaymentGatewayType.Paystack => GetString(webhookData, "data", "reference"),
+            PaymentGatewayType.Flutterwave =>
+                GetString(webhookData, "data", "reference") ??
+                GetString(webhookData, "data", "tx_ref") ??
+                GetString(webhookData, "tx_ref"),
+            PaymentGatewayType.Stripe =>
+                GetString(webhookData, "data", "object", "metadata", "reference") ??
+                GetString(webhookData, "data", "object", "client_reference_id"),
+            PaymentGatewayType.Checkout => GetString(webhookData, "data", "reference"),
+            PaymentGatewayType.Monnify =>
+                GetString(webhookData, "eventData", "paymentReference"),
+            PaymentGatewayType.Squad =>
+                GetString(webhookData, "transaction_ref") ??
+                GetString(webhookData, "transaction_reference"),
+            PaymentGatewayType.Korapay =>
+                GetString(webhookData, "data", "reference") ??
+                GetString(webhookData, "reference"),
+            PaymentGatewayType.PeachPayments =>
+                GetString(webhookData, "merchantTransactionId") ??
+                GetString(webhookData, "merchant_transaction_id"),
+            _ => null
+        };
+    }
+
+    private static string? GetString(JsonElement element, params string[] path)
+    {
+        foreach (var segment in path)
+        {
+            if (element.ValueKind != JsonValueKind.Object ||
+                !element.TryGetProperty(segment, out element))
+            {
+                return null;
+            }
+        }
+
+        return element.ValueKind == JsonValueKind.String
+            ? element.GetString()
+            : element.ToString();
     }
 
 }

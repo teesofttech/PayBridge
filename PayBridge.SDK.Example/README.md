@@ -109,7 +109,7 @@ PayBridge.SDK.Example/
   "customerName": "Jane Doe",
   "customerPhone": "+2348012345678",
   "redirectUrl": "http://localhost:5xxx/api/verify",
-  "webhookUrl": "https://your-ngrok-url.ngrok.io/api/webhook",
+  "webhookUrl": "https://your-ngrok-url.ngrok.io/api/webhook/Paystack",
   "metadata": { "orderId": "ORD-1042" },
   "gateway": 2
 }
@@ -150,7 +150,7 @@ pick the best available gateway based on the currency.
   "customerEmail": "jane@example.com",
   "customerName": "Jane Doe",
   "redirectUrl": "http://localhost:5xxx/api/verify",
-  "webhookUrl": "https://your-ngrok-url.ngrok.io/api/webhook"
+  "webhookUrl": "https://your-ngrok-url.ngrok.io/api/webhook/Flutterwave"
 }
 ```
 
@@ -197,14 +197,15 @@ the corresponding key block (e.g. `"Monnify": { ... }`).
 **When to use:** always. Webhooks are the authoritative source of payment status.
 Never fulfil an order based only on the redirect-back URL.
 
-**Endpoint:** `POST /api/webhook`
+**Endpoint:** `POST /api/webhook/{gateway}`
 
 The controller:
 1. Receives the raw gateway POST body.
-2. Calls `GatewayExtractor.DetectGatewayFromWebhook()` to identify the sender.
-3. Calls `GatewayExtractor.ExtractReferenceFromWebhook()` to pull the reference.
-4. Calls `IPaymentService.VerifyPaymentAsync()` to **confirm** the status server-side.
-5. Updates the in-memory order store.
+2. Verifies the provider signature before parsing the JSON body.
+3. Rejects missing, invalid, stale, and unsupported signatures without side effects.
+4. Calls `GatewayExtractor.ExtractReferenceFromWebhook()` after authentication.
+5. Calls `IPaymentService.VerifyPaymentAsync()` to **confirm** the status server-side.
+6. Updates the in-memory order store.
 
 **Testing locally** — see [Webhook Setup (local dev)](#-webhook-setup-local-dev).
 
@@ -323,7 +324,7 @@ ngrok http 5xxx   # replace 5xxx with your actual port
 # Forwarding  https://abcd1234.ngrok.io → http://localhost:5xxx
 
 # Use that URL as webhookUrl:
-# "webhookUrl": "https://abcd1234.ngrok.io/api/webhook"
+# "webhookUrl": "https://abcd1234.ngrok.io/api/webhook/Paystack"
 ```
 
 ### localtunnel (alternative)

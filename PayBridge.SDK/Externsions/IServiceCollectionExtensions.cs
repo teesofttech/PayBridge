@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using PayBridge.SDK.Application.Dtos;
 using PayBridge.SDK.Enums;
 using PayBridge.SDK.Interfaces;
+using PayBridge.SDK.Services;
 
 namespace PayBridge.SDK;
 
@@ -130,6 +132,8 @@ public static class IServiceCollectionExtensions
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
         services.AddScoped<PaymentGatewayFactory>();
+        services.TryAddSingleton(TimeProvider.System);
+        services.TryAddSingleton<IWebhookSignatureVerifier, WebhookSignatureVerifier>();
         services.AddHttpClient();
 
         // Register gateways

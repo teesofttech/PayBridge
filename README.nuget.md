@@ -150,7 +150,7 @@ var request = new PaymentRequest
     CustomerName    = "John Doe",
     CustomerPhone   = "+2348012345678",
     RedirectUrl     = "https://yourdomain.com/payment/callback",
-    WebhookUrl      = "https://yourdomain.com/api/payment/webhook",
+    WebhookUrl      = "https://yourdomain.com/api/webhook/Paystack",
     PaymentMethodType = PaymentMethodType.Card,
     Metadata        = new Dictionary<string, string>
     {
