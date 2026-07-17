@@ -1,0 +1,33 @@
+name: Dependency Security
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+      - 'security/**'
+  schedule:
+    - cron: '15 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: High/Critical NuGet Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Fail on high or critical NuGet vulnerabilities
+        run: ./scripts/check-vulnerable-packages.sh
