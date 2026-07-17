@@ -54,14 +54,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.15">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.29">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.15" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.15" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.15" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.15">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.29" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.29" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.29" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.29">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -73,6 +73,9 @@
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.10" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.3" />    
+    <!-- Override vulnerable transitive versions while remaining on the .NET 8 support line. -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+    <PackageReference Include="System.Text.Json" Version="8.0.6" />
   </ItemGroup>
 
 </Project>
