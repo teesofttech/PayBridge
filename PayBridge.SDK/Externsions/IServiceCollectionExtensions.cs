@@ -1,11 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using PayBridge.SDK.Application.Dtos;
 using PayBridge.SDK.Enums;
 using PayBridge.SDK.Interfaces;
 
 namespace PayBridge.SDK;
+
 public static class IServiceCollectionExtensions
 {
     private const int RetryCount = 3;
@@ -79,27 +81,50 @@ public static class IServiceCollectionExtensions
     /// <exception cref="ArgumentNullException"></exception>
     public static IServiceCollection AddPayBridge(this IServiceCollection services, Action<PaymentGatewayConfig> configAction)
     {
-        if (services == null)
-        {
-            throw new ArgumentNullException(nameof(services));
-        }
-
         if (configAction == null)
         {
             throw new ArgumentNullException(nameof(configAction));
         }
 
-        services.AddOptions<PaymentGatewayConfig>()
-            .Configure<IConfiguration>((settings, configuration) =>
-            {
-                configuration.GetSection("PaymentGatewayConfig").Bind(settings);
-            });
+        var configuration = services
+            .FirstOrDefault(descriptor => descriptor.ServiceType == typeof(IConfiguration))
+            ?.ImplementationInstance as IConfiguration;
 
+        return AddPayBridgeCore(services, configuration, configAction);
+    }
 
-        // Configure the SDK
+    /// <summary>
+    /// Add PayBridge SDK services and bind PaymentGatewayConfig from configuration before applying optional overrides.
+    /// </summary>
+    public static IServiceCollection AddPayBridge(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        Action<PaymentGatewayConfig>? configAction = null)
+    {
+        if (configuration == null)
+        {
+            throw new ArgumentNullException(nameof(configuration));
+        }
+
+        return AddPayBridgeCore(services, configuration, configAction);
+    }
+
+    private static IServiceCollection AddPayBridgeCore(
+        IServiceCollection services,
+        IConfiguration? configuration,
+        Action<PaymentGatewayConfig>? configAction)
+    {
+        if (services == null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
         var config = new PaymentGatewayConfig();
-        configAction(config);
+        configuration?.GetSection("PaymentGatewayConfig").Bind(config);
+        configAction?.Invoke(config);
+
         services.AddSingleton(config);
+        services.AddSingleton<IOptions<PaymentGatewayConfig>>(Options.Create(config));
 
         // Register core services
         services.AddScoped<IPaymentService, PaymentService>();
@@ -120,81 +145,76 @@ public static class IServiceCollectionExtensions
     /// <param name="config"></param>
     private static void RegisterGateways(IServiceCollection services, PaymentGatewayConfig config)
     {
-        // If no gateways are explicitly enabled, enable all available ones
+        // If no gateways are explicitly enabled, enable all configured ones.
         if (config.EnabledGateways.Count == 0)
         {
-            services.AddScoped<StripeGateway>();
-            services.AddScoped<PaystackGateway>();
-            services.AddScoped<FlutterwaveGateway>();
-            services.AddScoped<CheckoutGateway>();
-            services.AddScoped<BenefitPayGateway>();
-            services.AddScoped<KnetGateway>();
-            services.AddScoped<MonnifyGateway>();
-            services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<MonnifyGateway>());
-            services.AddScoped<SquadGateway>();
-            services.AddScoped<KorapayGateway>();
-            services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<KorapayGateway>());
-            services.AddScoped<InterswitchGateway>();
-            AddGatewayRegistration<DpoGroupGateway>(services);
-            services.AddScoped<RemitaGateway>();
-            services.AddScoped<OpayGateway>();
-            services.AddScoped<PawaPayGateway>();
-            services.AddScoped<PeachPaymentsGateway>();
+            foreach (var gateway in Enum.GetValues<PaymentGatewayType>())
+            {
+                if (gateway != PaymentGatewayType.Automatic && IsGatewayConfigured(config, gateway))
+                {
+                    RegisterGateway(services, gateway);
+                }
+            }
+
             return;
         }
 
         // Register only the enabled gateways
         foreach (var gateway in config.EnabledGateways)
         {
-            switch (gateway)
-            {
-                case PaymentGatewayType.Stripe:
-                    AddGatewayRegistration<StripeGateway>(services);
-                    break;
-                case PaymentGatewayType.Paystack:
-                    AddGatewayRegistration<PaystackGateway>(services);
-                    break;
-                case PaymentGatewayType.Flutterwave:
-                    AddGatewayRegistration<FlutterwaveGateway>(services);
-                    break;
-                case PaymentGatewayType.Checkout:
-                    AddGatewayRegistration<CheckoutGateway>(services);
-                    break;
-                case PaymentGatewayType.BenefitPay:
-                    AddGatewayRegistration<BenefitPayGateway>(services);
-                    break;
-                case PaymentGatewayType.Knet:
-                    AddGatewayRegistration<KnetGateway>(services);
-                    break;
-                case PaymentGatewayType.Monnify:
-                    AddGatewayRegistration<MonnifyGateway>(services);
-                    break;
-                case PaymentGatewayType.Squad:
-                    AddGatewayRegistration<SquadGateway>(services);
-                    break;
-                case PaymentGatewayType.Korapay:
-                    AddGatewayRegistration<KorapayGateway>(services);
-                    break;
-                case PaymentGatewayType.Interswitch:
-services.AddScoped<InterswitchGateway>();
-services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<InterswitchGateway>());
-                    break;
-                case PaymentGatewayType.Remita:
-                    services.AddScoped<RemitaGateway>();
-                    break;
-                case PaymentGatewayType.Opay:
-                    services.AddScoped<OpayGateway>();
-                    break;
-                case PaymentGatewayType.DpoGroup:
-                    AddGatewayRegistration<DpoGroupGateway>(services);
-                    break;
-                case PaymentGatewayType.PawaPay:
-                    services.AddScoped<PawaPayGateway>();
-                    break;
-                case PaymentGatewayType.PeachPayments:
-                    services.AddScoped<PeachPaymentsGateway>();
-                    break;
-            }
+            RegisterGateway(services, gateway);
+        }
+    }
+
+    private static void RegisterGateway(IServiceCollection services, PaymentGatewayType gateway)
+    {
+        switch (gateway)
+        {
+            case PaymentGatewayType.Stripe:
+                AddGatewayRegistration<StripeGateway>(services);
+                break;
+            case PaymentGatewayType.Paystack:
+                AddGatewayRegistration<PaystackGateway>(services);
+                break;
+            case PaymentGatewayType.Flutterwave:
+                AddGatewayRegistration<FlutterwaveGateway>(services);
+                break;
+            case PaymentGatewayType.Checkout:
+                AddGatewayRegistration<CheckoutGateway>(services);
+                break;
+            case PaymentGatewayType.BenefitPay:
+                AddGatewayRegistration<BenefitPayGateway>(services);
+                break;
+            case PaymentGatewayType.Knet:
+                AddGatewayRegistration<KnetGateway>(services);
+                break;
+            case PaymentGatewayType.Monnify:
+                AddGatewayRegistration<MonnifyGateway>(services);
+                break;
+            case PaymentGatewayType.Squad:
+                AddGatewayRegistration<SquadGateway>(services);
+                break;
+            case PaymentGatewayType.Korapay:
+                AddGatewayRegistration<KorapayGateway>(services);
+                break;
+            case PaymentGatewayType.Interswitch:
+                AddGatewayRegistration<InterswitchGateway>(services);
+                break;
+            case PaymentGatewayType.Remita:
+                AddGatewayRegistration<RemitaGateway>(services);
+                break;
+            case PaymentGatewayType.Opay:
+                AddGatewayRegistration<OpayGateway>(services);
+                break;
+            case PaymentGatewayType.DpoGroup:
+                AddGatewayRegistration<DpoGroupGateway>(services);
+                break;
+            case PaymentGatewayType.PawaPay:
+                AddGatewayRegistration<PawaPayGateway>(services);
+                break;
+            case PaymentGatewayType.PeachPayments:
+                AddGatewayRegistration<PeachPaymentsGateway>(services);
+                break;
         }
     }
 
@@ -217,5 +237,34 @@ services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<InterswitchGatew
             "mysql" => "MySql",
             _ => provider
         };
+    }
+
+    private static bool IsGatewayConfigured(PaymentGatewayConfig config, PaymentGatewayType gateway)
+    {
+        return gateway switch
+        {
+            PaymentGatewayType.Paystack => HasValue(config.Paystack.SecretKey),
+            PaymentGatewayType.Flutterwave => HasValue(config.FlutterwaveConfig.SecretKey),
+            PaymentGatewayType.Stripe => HasValue(config.Stripe.SecretKey),
+            PaymentGatewayType.Checkout => HasValue(config.Checkout.SecretKey),
+            PaymentGatewayType.BenefitPay => HasValue(config.BenefitPay.MerchantId) && HasValue(config.BenefitPay.ApiKey),
+            PaymentGatewayType.Knet => HasValue(config.Knet.TransportId) && HasValue(config.Knet.Password),
+            PaymentGatewayType.Monnify => HasValue(config.Monnify.ApiKey) && HasValue(config.Monnify.SecretKey) && HasValue(config.Monnify.ContractCode),
+            PaymentGatewayType.Squad => HasValue(config.Squad.SecretKey),
+            PaymentGatewayType.Korapay => HasValue(config.Korapay.SecretKey),
+            PaymentGatewayType.Interswitch => HasValue(config.Interswitch.ClientId) && HasValue(config.Interswitch.ClientSecret) && HasValue(config.Interswitch.MerchantCode),
+            PaymentGatewayType.Remita => HasValue(config.Remita.MerchantId) && HasValue(config.Remita.ServiceTypeId) && HasValue(config.Remita.ApiKey),
+            PaymentGatewayType.Opay => HasValue(config.Opay.MerchantId) && HasValue(config.Opay.SecretKey),
+            PaymentGatewayType.DpoGroup => HasValue(config.DpoGroup.CompanyToken),
+            PaymentGatewayType.PawaPay => HasValue(config.PawaPay.ApiToken),
+            PaymentGatewayType.PeachPayments => HasValue(config.PeachPayments.EntityId) && HasValue(config.PeachPayments.AccessToken),
+            _ => false
+        };
+    }
+
+    private static bool HasValue(string value)
+    {
+        return !string.IsNullOrWhiteSpace(value) &&
+            !value.StartsWith("YOUR_", StringComparison.OrdinalIgnoreCase);
     }
 }
