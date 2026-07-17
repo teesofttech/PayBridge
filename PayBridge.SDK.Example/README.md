@@ -43,13 +43,13 @@ No database is required to run the example — `OrderService` is in-memory.
 git clone https://github.com/teesofttech/PayBridge.git
 cd PayBridge
 
-# 2. Open the example project's config
-#    Paste your sandbox key(s) into appsettings.Development.json
-#    (the file is git-ignored — your keys stay local)
-open PayBridge.SDK.Example/appsettings.Development.json
+# 2. Store sandbox credentials outside the repository
+cd PayBridge.SDK.Example
+dotnet user-secrets set "PaymentGatewayConfig:EnabledGateways:0" "Paystack"
+dotnet user-secrets set "PaymentGatewayConfig:Paystack:PublicKey" "<sandbox-public-key>"
+dotnet user-secrets set "PaymentGatewayConfig:Paystack:SecretKey" "<sandbox-secret-key>"
 
 # 3. Run the example
-cd PayBridge.SDK.Example
 dotnet run
 
 # 4. Open Swagger in your browser
@@ -66,8 +66,8 @@ Swagger loads at the root URL `/`. Try **POST /api/payment** first.
 PayBridge.SDK.Example/
 │
 ├── Program.cs                   ← DI registration — read this first
-├── appsettings.json             ← All gateway config keys (placeholders)
-├── appsettings.Development.json ← Your real sandbox keys (git-ignored)
+├── appsettings.json             ← Credential-free schema and placeholders
+├── appsettings.Development.json ← Credential-free development settings
 │
 ├── Controllers/
 │   ├── PaymentController.cs     ← Scenario 1 & 2
@@ -274,7 +274,9 @@ Gateways with refund support: **Paystack ✓ | Flutterwave ✓ | Stripe ✓ | Ko
 
 ## ⚙️ Configuration Reference
 
-All gateway configuration lives in `appsettings.json` under `PaymentGatewayConfig`.
+Gateway configuration is bound under `PaymentGatewayConfig`. Tracked
+`appsettings*.json` files contain only placeholders; use .NET user-secrets for
+local credentials and environment variables or a managed secret store when deployed.
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -337,8 +339,8 @@ lt --port 5xxx
 
 | Error | Cause | Fix |
 |-------|-------|-----|
-| `Gateway 'X' is not registered in DI` | Gateway not in `EnabledGateways` | Add it to the list in `appsettings.json` |
-| `SecretKey is required` | Config key is empty / placeholder | Replace `YOUR_KEY_HERE` with a real key |
+| `Gateway 'X' is not registered in DI` | Gateway not enabled or configured | Set `EnabledGateways` and its credentials through user-secrets or environment variables |
+| `SecretKey is required` | Config key is empty / placeholder | Set the key with `dotnet user-secrets` or an environment variable |
 | `Could not find a transaction reference` | Wrong query parameter key on redirect | Check which key your gateway uses (see Scenario 5 table) |
 | `Refund not supported` | Gateway does not have a refund API | Check supported gateways list in Scenario 6 |
 | Webhook never arrives | Tunnel not running | Start ngrok and re-supply the URL when creating a payment |

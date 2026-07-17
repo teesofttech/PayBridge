@@ -52,28 +52,30 @@ cd PayBridge
 
 ### ⚙️ Configure the Database
 
-Edit `appsettings.json`:
+Keep connection strings out of tracked configuration. For local development,
+store one with .NET user-secrets:
 
-```json
-"DatabaseProvider": "MSSQL",
-  "ConnectionStrings": {
-    "PayBridgeDbContext": "Data Source=BABATUNDE;Initial Catalog=PayBridgeDB;Integrated Security=True;TrustServerCertificate=true;"
-  }
+```bash
+dotnet user-secrets set "ConnectionStrings:PayBridgeDbContext" \
+  "<your-local-connection-string>" \
+  --project PayBridge.SDK.Example/PayBridge.SDK.Example.csproj
 ```
 
 ### ⚙️ Configure Payment Gateways
 
 Korapay website: https://www.korahq.com/
 
-```json
-"PaymentGatewayConfig": {
-  "EnabledGateways": [ "Paystack", "Flutterwave", "Stripe", "Korapay" ],
-  "Korapay": {
-    "PublicKey": "pk_sandbox_xxxx",
-    "SecretKey": "sk_sandbox_xxxx"
-  }
-}
+```bash
+dotnet user-secrets set "PaymentGatewayConfig:EnabledGateways:0" "Korapay" \
+  --project PayBridge.SDK.Example/PayBridge.SDK.Example.csproj
+dotnet user-secrets set "PaymentGatewayConfig:Korapay:PublicKey" "<sandbox-public-key>" \
+  --project PayBridge.SDK.Example/PayBridge.SDK.Example.csproj
+dotnet user-secrets set "PaymentGatewayConfig:Korapay:SecretKey" "<sandbox-secret-key>" \
+  --project PayBridge.SDK.Example/PayBridge.SDK.Example.csproj
 ```
+
+Use environment variables or a managed secret store in deployed environments.
+Never commit sandbox or live credentials to `appsettings*.json`.
 
 ### 📚 Apply Migrations
 

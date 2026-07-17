@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>PayBridge.SDK.Example</RootNamespace>
     <AssemblyName>PayBridge.SDK.Example</AssemblyName>
+    <UserSecretsId>PayBridge.SDK.Example</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
