@@ -1,5 +1,4 @@
 using PayBridge.SDK;
-using PayBridge.SDK.Enums;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,16 +22,9 @@ builder.Services.AddDBRepository(builder.Configuration, "SqlServer");
 builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddPayBridge(config =>
-{
-    config.EnabledGateways = new List<PaymentGatewayType>
-    {
-        PaymentGatewayType.Stripe,
-        PaymentGatewayType.Paystack,
-        PaymentGatewayType.Flutterwave,
-        PaymentGatewayType.Korapay
-    };
-});
+// Bind gateway selection and credentials from the configuration stack.
+// Keep credentials in user-secrets locally or a managed secret store in production.
+builder.Services.AddPayBridge(builder.Configuration);
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -44,5 +36,5 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.MapControllers(); 
+app.MapControllers();
 app.Run();

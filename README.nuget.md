@@ -68,38 +68,25 @@ Install-Package PayBridge.SDK
 
 ```csharp
 using PayBridge.SDK;
-using PayBridge.SDK.Enums;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Register the database (SQL Server | Npgsql | MySql)
 builder.Services.AddDBRepository(builder.Configuration, "MSSQL");
 
-// Register PayBridge with your gateway credentials
-builder.Services.AddPayBridge(config =>
-{
-    config.EnabledGateways = new List<PaymentGatewayType>
-    {
-        PaymentGatewayType.Flutterwave,
-        PaymentGatewayType.Paystack,
-        PaymentGatewayType.Stripe
-    };
-
-    config.FlutterwaveConfig.PublicKey    = "FLWPUBK-xxxx";
-    config.FlutterwaveConfig.SecretKey    = "FLWSECK-xxxx";
-    config.FlutterwaveConfig.EncryptionKey = "xxxx";
-
-    config.Paystack.PublicKey = "pk_test_xxxx";
-    config.Paystack.SecretKey = "sk_test_xxxx";
-
-    config.Stripe.SecretKey = "sk_test_xxxx";
-});
+// Bind non-secret settings from appsettings and credentials from user-secrets,
+// environment variables, or your production secret provider.
+builder.Services.AddPayBridge(builder.Configuration);
 
 var app = builder.Build();
 app.Run();
 ```
 
 ### 2. Configure `appsettings.json`
+
+The values below are placeholders. Never commit sandbox or live credentials.
+For local development, prefer .NET user-secrets; for deployments, use environment
+variables or a managed secret store.
 
 ```json
 {

@@ -40,8 +40,8 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new()
     {
-        Title       = "PayBridge.SDK — Example API",
-        Version     = "v1",
+        Title = "PayBridge.SDK — Example API",
+        Version = "v1",
         Description = "Demonstrates every PayBridge.SDK integration pattern: " +
                       "explicit gateway selection, automatic routing, webhook " +
                       "processing, redirect-back verification, and refunds."
@@ -70,24 +70,25 @@ builder.Services.AddSwaggerGen(c =>
 // AddPayBridge reads "PaymentGatewayConfig" from appsettings.json and then
 // lets you override / extend anything in the lambda.
 //
-// PATTERN A — Config-file driven (recommended for production):
-//   Keys live in appsettings.json / environment variables / Azure Key Vault.
+// PATTERN A — Configuration driven (recommended for production):
+//   Non-secret settings may live in appsettings.json. Credentials must come from
+//   user-secrets locally or environment variables / a managed secret store in production.
 //   The lambda is left empty (or used only for feature flags).
 //
-// PATTERN B — Fully in-code (good for quick demos / tests):
-//   Supply every key directly in the lambda — nothing in appsettings.json.
+// PATTERN B — Fully in-code (tests only):
+//   Supply fake credentials directly in isolated test setup, never in committed source.
 //
 // This example shows PATTERN A so you can see how the config file maps to
 // the object model.
 
 builder.Services.AddPayBridge(builder.Configuration, config =>
 {
-    // Read all gateway keys from appsettings.json.
-    // The SDK binds "PaymentGatewayConfig" automatically via IOptions.
+    // The SDK binds "PaymentGatewayConfig" from the complete configuration stack,
+    // including appsettings, user-secrets, environment variables, and secret stores.
 
     // ── Override / extend specific settings in code ────────────────────────
     //
-    // Any property you set here wins over appsettings.json.
+    // Any property you set here wins over the bound configuration.
     // Uncomment and edit the block that matches the gateway you want to test.
 
     // ── Explicitly choose which gateways to activate: ─────────────────────
