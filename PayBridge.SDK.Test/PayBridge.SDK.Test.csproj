@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PayBridge.SDK\PayBridge.SDK.csproj" />
+    <ProjectReference Include="..\PayBridge.SDK.Example\PayBridge.SDK.Example.csproj" />
   </ItemGroup>
 
 </Project>

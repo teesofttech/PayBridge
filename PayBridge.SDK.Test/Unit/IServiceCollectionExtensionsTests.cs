@@ -84,10 +84,33 @@ public class IServiceCollectionExtensionsTests
         gateways[0].GatewayType.Should().Be(PaymentGatewayType.Paystack);
     }
 
+    [Fact]
+    public void AddPayBridge_RegistersWebhookVerifier_AndPreservesCustomTimeProvider()
+    {
+        var configuration = BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["PaymentGatewayConfig:Paystack:SecretKey"] = "sk_test_paystack"
+        });
+        var customTimeProvider = new TestTimeProvider();
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<TimeProvider>(customTimeProvider);
+
+        services.AddPayBridge(configuration);
+
+        using var provider = services.BuildServiceProvider();
+        provider.GetRequiredService<IWebhookSignatureVerifier>().Should().NotBeNull();
+        provider.GetRequiredService<TimeProvider>().Should().BeSameAs(customTimeProvider);
+    }
+
     private static IConfiguration BuildConfiguration(Dictionary<string, string?> values)
     {
         return new ConfigurationBuilder()
             .AddInMemoryCollection(values)
             .Build();
+    }
+
+    private sealed class TestTimeProvider : TimeProvider
+    {
     }
 }

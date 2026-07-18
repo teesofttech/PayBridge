@@ -1,7 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.AspNetCore.WebUtilities;
+using System.Text;
+using System.Text.Json;
 using PayBridge.SDK.Application.Dtos.Request;
 using PayBridge.SDK.Dtos.Request;
 using PayBridge.SDK.Dtos.Response;
+using PayBridge.SDK.Dtos.Webhooks;
 using PayBridge.SDK.Enums;
 using PayBridge.SDK.Helper;
 using PayBridge.SDK.Interfaces;
@@ -16,13 +21,16 @@ namespace PayBridge.SDK.Presentation.Controllers;
 public class PaymentController : ControllerBase
 {
     private readonly IPaymentService _paymentService;
+    private readonly IWebhookSignatureVerifier _webhookVerifier;
     private readonly ILogger<PaymentController> _logger;
 
     public PaymentController(
         IPaymentService paymentService,
+        IWebhookSignatureVerifier webhookVerifier,
         ILogger<PaymentController> logger)
     {
         _paymentService = paymentService ?? throw new ArgumentNullException(nameof(paymentService));
+        _webhookVerifier = webhookVerifier ?? throw new ArgumentNullException(nameof(webhookVerifier));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -71,14 +79,13 @@ public class PaymentController : ControllerBase
             });
         }
     }
-      
+
     /// <summary>
-    /// Handles payment webhook notifications
+    /// Handles redirect-back transaction verification
     /// </summary>
     /// <remarks>
-    /// This endpoint processes webhook notifications from payment gateways.
-    /// Each gateway sends notifications in different formats, so we need to
-    /// detect the gateway from the notification format.
+    /// This endpoint extracts a transaction reference from the redirect query
+    /// and confirms the payment using the provider API.
     /// </remarks>
     [HttpGet("verify-transaction")]
     [ProducesResponseType(200)]
@@ -201,24 +208,86 @@ public class PaymentController : ControllerBase
     /// Handles payment webhook notifications
     /// </summary>
     /// <remarks>
-    /// This endpoint processes webhook notifications from payment gateways.
-    /// Each gateway sends notifications in different formats, so we need to
-    /// detect the gateway from the notification format.
+    /// This endpoint requires an explicit gateway route and verifies its
+    /// signature against the raw body before parsing the notification.
     /// </remarks>
-    [HttpPost("webhook")]
+    [HttpPost("webhook/{gateway}")]
+    [RequestSizeLimit(1_048_576)]
     [ProducesResponseType(200)]
     [ProducesResponseType(400)]
-    public async Task<IActionResult> ProcessWebhook([FromBody] object webhookData)
+    [ProducesResponseType(401)]
+    public async Task<IActionResult> ProcessWebhook(
+        PaymentGatewayType gateway,
+        CancellationToken cancellationToken)
     {
         try
         {
-            _logger.LogInformation("Received webhook notification: {Data}", webhookData);
+            using var bodyBuffer = new MemoryStream();
+            await Request.Body.CopyToAsync(bodyBuffer, cancellationToken);
+            var rawBody = bodyBuffer.ToArray();
+            var headers = Request.Headers.ToDictionary(
+                header => header.Key,
+                header => header.Value.ToString(),
+                StringComparer.OrdinalIgnoreCase);
+            var signatureResult = _webhookVerifier.Verify(new WebhookVerificationRequest(
+                gateway,
+                rawBody,
+                headers,
+                Request.Method,
+                Request.GetDisplayUrl()));
 
-            // Determine which gateway sent the webhook
-            PaymentGatewayType gateway = GatewayExtractor.DetectGatewayFromWebhook(webhookData);
-            string reference = GatewayExtractor.ExtractReferenceFromWebhook(webhookData, gateway);
+            if (!signatureResult.IsValid)
+            {
+                _logger.LogWarning(
+                    "Rejected unauthenticated {Gateway} webhook: {Reason}",
+                    gateway,
+                    signatureResult.FailureReason);
+                return Unauthorized(new ErrorResponse
+                {
+                    Message = "Webhook signature is invalid",
+                    ErrorCode = "INVALID_WEBHOOK_SIGNATURE"
+                });
+            }
 
-            if (string.IsNullOrEmpty(reference))
+            string? reference;
+            if (gateway == PaymentGatewayType.PeachPayments &&
+                Request.ContentType?.StartsWith(
+                    "application/x-www-form-urlencoded",
+                    StringComparison.OrdinalIgnoreCase) == true)
+            {
+                var fields = QueryHelpers.ParseQuery(Encoding.UTF8.GetString(rawBody))
+                    .ToDictionary(
+                        field => field.Key,
+                        field => field.Value.ToString(),
+                        StringComparer.OrdinalIgnoreCase);
+                reference = GatewayExtractor.ExtractReferenceFromWebhook(fields, gateway);
+            }
+            else
+            {
+                JsonDocument webhookData;
+                try
+                {
+                    webhookData = JsonDocument.Parse(rawBody);
+                }
+                catch (JsonException)
+                {
+                    _logger.LogWarning("Rejected malformed {Gateway} webhook JSON", gateway);
+                    return BadRequest(new ErrorResponse
+                    {
+                        Message = "Webhook body is not valid JSON",
+                        ErrorCode = "INVALID_WEBHOOK"
+                    });
+                }
+
+                using (webhookData)
+                {
+                    reference = GatewayExtractor.ExtractReferenceFromWebhook(
+                        webhookData.RootElement,
+                        gateway);
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(reference))
             {
                 _logger.LogWarning("Could not extract transaction reference from webhook");
                 return BadRequest(new ErrorResponse
@@ -261,4 +330,3 @@ public class PaymentController : ControllerBase
         }
     }
 }
-
