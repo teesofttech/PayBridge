@@ -246,7 +246,9 @@ public class PaymentService : IPaymentService
             ? refund.Id
             : response.RefundReference;
         refund.Status = response.Success ? response.Status : PaymentStatus.Failed;
-        refund.ProcessedAt = refund.Status == PaymentStatus.Pending ? null : DateTime.UtcNow;
+        refund.ProcessedAt = refund.Status == PaymentStatus.Pending
+            ? null
+            : response.RefundDate == default ? DateTime.UtcNow : response.RefundDate;
         refund.GatewayResponse = JsonSerializer.Serialize(response);
         await _refundRepository.UpdateAsync(refund);
 

@@ -10,13 +10,14 @@ namespace PayBridge.SDK.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            var (boundedType, unboundedType) = GetProviderColumnTypes();
             migrationBuilder.AlterColumn<string>(
                 name: "PaymentTransactionReference",
                 table: "Refunds",
-                type: "nvarchar(450)",
+                type: boundedType,
                 nullable: false,
                 oldClrType: typeof(string),
-                oldType: "nvarchar(max)");
+                oldType: unboundedType);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Refunds_PaymentTransactionReference_Status",
@@ -31,13 +32,34 @@ namespace PayBridge.SDK.Migrations
                 name: "IX_Refunds_PaymentTransactionReference_Status",
                 table: "Refunds");
 
+            var (boundedType, unboundedType) = GetProviderColumnTypes();
             migrationBuilder.AlterColumn<string>(
                 name: "PaymentTransactionReference",
                 table: "Refunds",
-                type: "nvarchar(max)",
+                type: unboundedType,
                 nullable: false,
                 oldClrType: typeof(string),
-                oldType: "nvarchar(450)");
+                oldType: boundedType);
+        }
+
+        private (string Bounded, string Unbounded) GetProviderColumnTypes()
+        {
+            if (ActiveProvider.Contains("Npgsql"))
+            {
+                return ("character varying(450)", "text");
+            }
+
+            if (ActiveProvider.Contains("MySql"))
+            {
+                return ("varchar(450)", "longtext");
+            }
+
+            if (ActiveProvider.Contains("Sqlite"))
+            {
+                return ("TEXT", "TEXT");
+            }
+
+            return ("nvarchar(450)", "nvarchar(max)");
         }
     }
 }

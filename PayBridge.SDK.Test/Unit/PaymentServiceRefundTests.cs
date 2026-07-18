@@ -17,13 +17,14 @@ public class PaymentServiceRefundTests
     [Fact]
     public async Task RefundPaymentAsync_persists_confirmed_full_refund_and_updates_payment()
     {
+        var providerTimestamp = DateTime.UtcNow.AddMinutes(-5);
         var fixture = CreateFixture(new RefundResponse
         {
             Success = true,
             RefundReference = "provider-refund",
             Amount = 100m,
             Status = PaymentStatus.Refunded,
-            RefundDate = DateTime.UtcNow
+            RefundDate = providerTimestamp
         });
 
         var response = await fixture.Service.RefundPaymentAsync(NewRequest(100m));
@@ -31,7 +32,9 @@ public class PaymentServiceRefundTests
         response.Success.Should().BeTrue();
         fixture.Refund.Status.Should().Be(PaymentStatus.Refunded);
         fixture.Refund.RefundReference.Should().Be("provider-refund");
-        fixture.Refund.ProcessedAt.Should().NotBeNull();
+        fixture.Refund.ProcessedAt.Should().Be(providerTimestamp);
+        fixture.Refunds.Verify(repository =>
+            repository.UpdateAsync(fixture.Refund), Times.Once);
         fixture.Transaction.Status.Should().Be(PaymentStatus.Refunded);
         fixture.Transactions.Verify(repository =>
             repository.UpdateAsync(fixture.Transaction), Times.Once);
@@ -51,6 +54,8 @@ public class PaymentServiceRefundTests
         await fixture.Service.RefundPaymentAsync(NewRequest(100m));
 
         fixture.Refund.Status.Should().Be(PaymentStatus.Pending);
+        fixture.Refunds.Verify(repository =>
+            repository.UpdateAsync(fixture.Refund), Times.Once);
         fixture.Transaction.Status.Should().Be(PaymentStatus.Successful);
         fixture.Transactions.Verify(repository =>
             repository.UpdateAsync(It.IsAny<PaymentTransaction>()), Times.Never);
@@ -72,6 +77,8 @@ public class PaymentServiceRefundTests
         fixture.Refund.Status.Should().Be(PaymentStatus.Failed);
         fixture.Refund.ProcessedAt.Should().NotBeNull();
         fixture.Refund.GatewayResponse.Should().Contain("rejected");
+        fixture.Refunds.Verify(repository =>
+            repository.UpdateAsync(fixture.Refund), Times.Once);
     }
 
     [Fact]
@@ -84,6 +91,8 @@ public class PaymentServiceRefundTests
         await action.Should().ThrowAsync<Exception>();
         fixture.Refund.Status.Should().Be(PaymentStatus.Failed);
         fixture.Refund.ProcessedAt.Should().NotBeNull();
+        fixture.Refunds.Verify(repository =>
+            repository.UpdateAsync(fixture.Refund), Times.Once);
     }
 
     [Fact]

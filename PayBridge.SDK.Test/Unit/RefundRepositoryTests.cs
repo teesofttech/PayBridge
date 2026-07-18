@@ -66,6 +66,21 @@ public class RefundRepositoryTests
             .Should().BeTrue();
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task TryReserveAsync_rejects_non_positive_amounts(decimal amount)
+    {
+        await using var database = await RefundDatabase.CreateAsync();
+        await using var context = database.CreateContext();
+        var repository = CreateRepository(context);
+
+        var action = () => repository.TryReserveAsync(NewRefund("invalid", amount), 100m);
+
+        await action.Should().ThrowAsync<ArgumentOutOfRangeException>()
+            .WithParameterName("amount");
+    }
+
     [Fact]
     public async Task Concurrent_reservations_cannot_exceed_captured_amount()
     {
