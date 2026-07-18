@@ -17,7 +17,7 @@ public class IServiceCollectionExtensionsTests
     {
         var configuration = BuildConfiguration(new Dictionary<string, string?>
         {
-            ["PaymentGatewayConfig:DefaultGateway"] = "Stripe",
+            ["PaymentGatewayConfig:DefaultGateway"] = "Paystack",
             ["PaymentGatewayConfig:EnabledGateways:0"] = "Paystack",
             ["PaymentGatewayConfig:Paystack:SecretKey"] = "sk_from_config"
         });
@@ -35,7 +35,7 @@ public class IServiceCollectionExtensionsTests
         var config = provider.GetRequiredService<PaymentGatewayConfig>();
         var options = provider.GetRequiredService<IOptions<PaymentGatewayConfig>>();
 
-        config.DefaultGateway.Should().Be(PaymentGatewayType.Stripe);
+        config.DefaultGateway.Should().Be(PaymentGatewayType.Paystack);
         config.EnabledGateways.Should().ContainSingle().Which.Should().Be(PaymentGatewayType.Paystack);
         config.Paystack.SecretKey.Should().Be("sk_from_code");
         options.Value.Should().BeSameAs(config);
@@ -101,6 +101,73 @@ public class IServiceCollectionExtensionsTests
         using var provider = services.BuildServiceProvider();
         provider.GetRequiredService<IWebhookSignatureVerifier>().Should().NotBeNull();
         provider.GetRequiredService<TimeProvider>().Should().BeSameAs(customTimeProvider);
+    }
+
+    [Fact]
+    public void AddPayBridge_WhenEnabledGatewayIsMissingRequiredConfig_Throws()
+    {
+        var configuration = BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["PaymentGatewayConfig:EnabledGateways:0"] = "Paystack"
+        });
+        var services = new ServiceCollection();
+        services.AddLogging();
+
+        var action = () => services.AddPayBridge(configuration);
+
+        action.Should().Throw<Exception>()
+            .WithMessage("*Paystack*missing required configuration*");
+    }
+
+    [Fact]
+    public void AddPayBridge_WhenEnabledGatewaysContainsAutomatic_Throws()
+    {
+        var configuration = BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["PaymentGatewayConfig:EnabledGateways:0"] = "Automatic"
+        });
+        var services = new ServiceCollection();
+        services.AddLogging();
+
+        var action = () => services.AddPayBridge(configuration);
+
+        action.Should().Throw<Exception>()
+            .WithMessage("*cannot include Automatic*");
+    }
+
+    [Fact]
+    public void AddPayBridge_WhenDefaultGatewayIsMissingRequiredConfig_Throws()
+    {
+        var configuration = BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["PaymentGatewayConfig:DefaultGateway"] = "Paystack"
+        });
+        var services = new ServiceCollection();
+        services.AddLogging();
+
+        var action = () => services.AddPayBridge(configuration);
+
+        action.Should().Throw<Exception>()
+            .WithMessage("*Default gateway*Paystack*missing required configuration*");
+    }
+
+    [Fact]
+    public void AddPayBridge_WhenDefaultGatewayIsNotInEnabledGateways_Throws()
+    {
+        var configuration = BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["PaymentGatewayConfig:DefaultGateway"] = "Stripe",
+            ["PaymentGatewayConfig:EnabledGateways:0"] = "Paystack",
+            ["PaymentGatewayConfig:Stripe:SecretKey"] = "sk_test_stripe",
+            ["PaymentGatewayConfig:Paystack:SecretKey"] = "sk_test_paystack"
+        });
+        var services = new ServiceCollection();
+        services.AddLogging();
+
+        var action = () => services.AddPayBridge(configuration);
+
+        action.Should().Throw<Exception>()
+            .WithMessage("*Default gateway*Stripe*must be included in EnabledGateways*");
     }
 
     [Fact]
