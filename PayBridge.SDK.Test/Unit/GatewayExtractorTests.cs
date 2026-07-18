@@ -2,6 +2,7 @@ using FluentAssertions;
 using PayBridge.SDK.Enums;
 using PayBridge.SDK.Helper;
 using System.Dynamic;
+using System.Text.Json;
 using Xunit;
 
 namespace PayBridge.SDK.Test.Unit;
@@ -44,13 +45,12 @@ public class GatewayExtractorTests
     }
 
     [Fact]
-    public void DetectGatewayFromWebhook_ReturnsStripe_WhenTypeStartsWithStripeDot()
+    public void DetectGatewayFromWebhook_ReturnsStripe_ForEventEnvelope()
     {
-        // The implementation accesses data.type dynamically after casting to IDictionary.
-        // ExpandoObject satisfies both the IDictionary cast and dynamic property access.
         dynamic payload = new ExpandoObject();
-        payload.type = "stripe.payment_intent.succeeded";
+        payload.type = "payment_intent.succeeded";
         payload.id   = "evt_123";
+        payload.data = new { @object = new { id = "pi_123" } };
 
         PaymentGatewayType result = GatewayExtractor.DetectGatewayFromWebhook(payload);
 
@@ -129,19 +129,94 @@ public class GatewayExtractorTests
         result.Should().Be(PaymentGatewayType.Automatic);
     }
 
-    // Paystack takes priority over Stripe (event key checked before type key)
     [Fact]
-    public void DetectGatewayFromWebhook_PrioritisesEventKey_OverTypeKey()
+    public void DetectGatewayFromWebhook_ReturnsPaystack_ForEventAndDataEnvelope()
     {
         var payload = new Dictionary<string, object>
         {
             ["event"] = "charge.success",
-            ["type"]  = "stripe.some_event"
+            ["type"]  = "stripe.some_event",
+            ["data"] = new { reference = "PAY-1" }
         };
 
         var result = GatewayExtractor.DetectGatewayFromWebhook(payload);
 
         result.Should().Be(PaymentGatewayType.Paystack);
+    }
+
+    [Fact]
+    public void DetectGatewayFromWebhook_ReturnsFlutterwave_ForV3PayloadContainingEvent()
+    {
+        using var document = JsonDocument.Parse("""
+            {
+              "event": "charge.completed",
+              "data": {
+                "tx_ref": "merchant-ref",
+                "flw_ref": "FLW-MOCK-123"
+              }
+            }
+            """);
+
+        var result = GatewayExtractor.DetectGatewayFromWebhookResult(document.RootElement);
+
+        result.Status.Should().Be(WebhookGatewayDetectionStatus.Detected);
+        result.Gateway.Should().Be(PaymentGatewayType.Flutterwave);
+    }
+
+    [Fact]
+    public void DetectGatewayFromWebhook_ReturnsFlutterwave_ForCurrentWebhookEnvelope()
+    {
+        using var document = JsonDocument.Parse("""
+            {
+              "id": "wbk_W5p6ktwU0jQ8RO4By860",
+              "timestamp": 1735116884019,
+              "type": "charge.completed",
+              "data": { "reference": "merchant-ref", "status": "succeeded" }
+            }
+            """);
+
+        var result = GatewayExtractor.DetectGatewayFromWebhookResult(document.RootElement);
+
+        result.Status.Should().Be(WebhookGatewayDetectionStatus.Detected);
+        result.Gateway.Should().Be(PaymentGatewayType.Flutterwave);
+    }
+
+    [Fact]
+    public void DetectGatewayFromWebhook_ReportsAmbiguousPayload()
+    {
+        var payload = new Dictionary<string, object>
+        {
+            ["event"] = "charge.success",
+            ["data"] = new { reference = "PAY-1" },
+            ["_links"] = new { self = new { href = "https://api.checkout.com/events/evt_1" } }
+        };
+
+        var result = GatewayExtractor.DetectGatewayFromWebhookResult(payload);
+
+        result.Status.Should().Be(WebhookGatewayDetectionStatus.Ambiguous);
+        result.Gateway.Should().BeNull();
+    }
+
+    [Fact]
+    public void DetectGatewayFromWebhook_ReportsInvalidMalformedJson()
+    {
+        using var document = JsonDocument.Parse("[]");
+
+        var result = GatewayExtractor.DetectGatewayFromWebhookResult(document.RootElement);
+
+        result.Status.Should().Be(WebhookGatewayDetectionStatus.Invalid);
+        result.Gateway.Should().BeNull();
+    }
+
+    [Fact]
+    public void DetectGatewayFromWebhook_SupportsTypedPayloads()
+    {
+        var payload = new { @event = "charge.success", data = new { reference = "PAY-1" } };
+
+        var result = GatewayExtractor.DetectGatewayFromWebhookResult(payload);
+
+        result.Status.Should().Be(WebhookGatewayDetectionStatus.Detected);
+        result.Gateway.Should().Be(PaymentGatewayType.Paystack);
     }
 
     // ── ExtractReferenceFromWebhook ───────────────────────────────────────────
