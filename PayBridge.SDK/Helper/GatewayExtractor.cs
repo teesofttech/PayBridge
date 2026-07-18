@@ -13,54 +13,83 @@ public static class GatewayExtractor
     /// </summary>
     public static PaymentGatewayType DetectGatewayFromWebhook(object webhookData)
     {
-        // Convert to dynamic to inspect properties
-        dynamic data = webhookData;
+        var result = DetectGatewayFromWebhookResult(webhookData);
+        return result.Status == WebhookGatewayDetectionStatus.Detected
+            ? result.Gateway!.Value
+            : PaymentGatewayType.Automatic;
+    }
+
+    /// <summary>
+    /// Detects a provider from an unauthenticated payload shape. Prefer the
+    /// authenticated provider supplied by the webhook route whenever available.
+    /// </summary>
+    public static WebhookGatewayDetectionResult DetectGatewayFromWebhookResult(
+        object? webhookData)
+    {
+        if (webhookData is null)
+        {
+            return WebhookGatewayDetectionResult.Invalid;
+        }
 
         try
         {
-            var webhookDictionary = (IDictionary<string, object>)data;
-
-            // Paystack webhooks contain an 'event' property
-            if (webhookDictionary.ContainsKey("event"))
+            var payload = webhookData is JsonElement element
+                ? element
+                : JsonSerializer.SerializeToElement(webhookData);
+            if (payload.ValueKind != JsonValueKind.Object)
             {
-                return PaymentGatewayType.Paystack;
+                return WebhookGatewayDetectionResult.Invalid;
             }
 
-            // Flutterwave webhooks contain a 'flw_ref' property
-            if (webhookDictionary.ContainsKey("flw_ref"))
+            var candidates = new HashSet<PaymentGatewayType>();
+            var data = GetObject(payload, "data");
+
+            if (HasString(payload, "flw_ref") ||
+                (data is { } flutterwaveData && HasString(flutterwaveData, "flw_ref")) ||
+                (StartsWith(payload, "id", "wbk_") && HasProperty(payload, "timestamp")))
             {
-                return PaymentGatewayType.Flutterwave;
+                candidates.Add(PaymentGatewayType.Flutterwave);
             }
 
-            // Stripe webhooks contain a 'type' property starting with 'stripe.'
-            if (webhookDictionary.ContainsKey("type") &&
-                data.type.ToString().StartsWith("stripe."))
+            if (!candidates.Contains(PaymentGatewayType.Flutterwave) &&
+                HasString(payload, "event") && data is not null)
             {
-                return PaymentGatewayType.Stripe;
+                candidates.Add(PaymentGatewayType.Paystack);
             }
 
-            // Checkout.com webhooks contain a '_links' property
-            if (webhookDictionary.ContainsKey("_links"))
+            if (StartsWith(payload, "id", "evt_") &&
+                HasString(payload, "type") &&
+                data is { } stripeData &&
+                stripeData.TryGetProperty("object", out _))
             {
-                return PaymentGatewayType.Checkout;
+                candidates.Add(PaymentGatewayType.Stripe);
             }
 
-            if (webhookDictionary.ContainsKey("reference"))
+            if (payload.TryGetProperty("_links", out var links) &&
+                links.ValueKind == JsonValueKind.Object)
             {
-                var reference = webhookDictionary["reference"]?.ToString();
-                if (reference?.StartsWith(GatewayReferencePrefixes.Korapay, StringComparison.OrdinalIgnoreCase) == true)
-                {
-                    return PaymentGatewayType.Korapay;
-                }
+                candidates.Add(PaymentGatewayType.Checkout);
             }
 
-            // Default to Automatic if we can't determine the gateway
-            return PaymentGatewayType.Automatic;
+            var reference = GetString(payload, "reference") ??
+                (data is { } providerData ? GetString(providerData, "reference") : null);
+            if (reference?.StartsWith(
+                    GatewayReferencePrefixes.Korapay,
+                    StringComparison.OrdinalIgnoreCase) == true)
+            {
+                candidates.Add(PaymentGatewayType.Korapay);
+            }
+
+            return candidates.Count switch
+            {
+                0 => WebhookGatewayDetectionResult.Unknown,
+                1 => WebhookGatewayDetectionResult.Detected(candidates.Single()),
+                _ => WebhookGatewayDetectionResult.Ambiguous
+            };
         }
-        catch
+        catch (Exception)
         {
-            // If we encounter any errors, default to Automatic
-            return PaymentGatewayType.Automatic;
+            return WebhookGatewayDetectionResult.Invalid;
         }
     }
 
@@ -206,4 +235,46 @@ public static class GatewayExtractor
             : element.ToString();
     }
 
+    private static JsonElement? GetObject(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Object
+            ? value
+            : null;
+
+    private static bool HasString(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value) &&
+        value.ValueKind == JsonValueKind.String &&
+        !string.IsNullOrWhiteSpace(value.GetString());
+
+    private static bool HasProperty(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value) &&
+        value.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined;
+
+    private static bool StartsWith(JsonElement element, string name, string prefix) =>
+        element.TryGetProperty(name, out var value) &&
+        value.ValueKind == JsonValueKind.String &&
+        value.GetString()?.StartsWith(prefix, StringComparison.Ordinal) == true;
+
+}
+
+public enum WebhookGatewayDetectionStatus
+{
+    Detected,
+    Unknown,
+    Ambiguous,
+    Invalid
+}
+
+public sealed record WebhookGatewayDetectionResult(
+    WebhookGatewayDetectionStatus Status,
+    PaymentGatewayType? Gateway)
+{
+    public static WebhookGatewayDetectionResult Unknown { get; } =
+        new(WebhookGatewayDetectionStatus.Unknown, null);
+    public static WebhookGatewayDetectionResult Ambiguous { get; } =
+        new(WebhookGatewayDetectionStatus.Ambiguous, null);
+    public static WebhookGatewayDetectionResult Invalid { get; } =
+        new(WebhookGatewayDetectionStatus.Invalid, null);
+
+    public static WebhookGatewayDetectionResult Detected(PaymentGatewayType gateway) =>
+        new(WebhookGatewayDetectionStatus.Detected, gateway);
 }
