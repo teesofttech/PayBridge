@@ -11,7 +11,7 @@
   <a href="https://github.com/teesofttech/PayBridge/issues">
     <img src="https://img.shields.io/github/issues/teesofttech/PayBridge" alt="Issues">
   </a>
-  <a href="https://github.com/teesofttech/PayBridge/blob/main/LICENSE">
+  <a href="https://github.com/teesofttech/PayBridge/blob/master/LICENSE">
     <img src="https://img.shields.io/github/license/teesofttech/PayBridge" alt="License">
   </a>
 </p>
@@ -29,7 +29,7 @@
 
 ## 🚀 Features
 
-- **Unified API**: Interact with multiple payment gateways (e.g., Flutterwave, Paystack, Fincra, Stripe, Korapay) through a single, consistent interface.
+- **Unified API**: Interact with multiple payment gateways (e.g., Flutterwave, Paystack, Stripe, Korapay, PeachPayments) through a single, consistent interface.
 - **Database Flexibility**: Choose between PayBridge's default database or integrate with your own.
 - **Transaction Logging**: Automatically records transaction details for auditing and reporting.
 - **Extensible Architecture**: Built with Clean Architecture principles for maintainability and scalability.
@@ -278,6 +278,6 @@ git push origin feature/your-feature-name
 
 ## 📄 License
 
-PayBridge is released under the [MIT License](https://github.com/teesofttech/PayBridge/blob/main/LICENSE).
+PayBridge is released under the [MIT License](https://github.com/teesofttech/PayBridge/blob/master/LICENSE).
 
 > You're free to use, modify, and distribute this software as long as the original license is included.

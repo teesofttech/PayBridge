@@ -10,7 +10,7 @@
 	<FileVersion>1.2.0</FileVersion>
 	<Authors>Babatunde Esanju</Authors>
 	<Company>Teesoftech</Company>
-	<PackageDescription>Seamlessly integrate multiple payment gateways into your ASP.NET Core applications. v1.2.0 adds PeachPayments gateway, a full xUnit test suite (76 tests), CI/CD workflows, and codebase-wide nullable safety fixes.</PackageDescription>
+  <PackageDescription>Seamlessly integrate multiple payment gateways into your ASP.NET Core applications with secure webhook verification, deterministic routing, and built-in persistence support.</PackageDescription>
 	<Description>Seamlessly integrate multiple payment gateways into your ASP.NET Core applications.</Description>
 	<PackageTags>payments; aspnetcore; fintech; sdk; paybridge; nigeria; africa; flutterwave; paystack; stripe; monnify; opay; remita; interswitch; korapay; pawapay; dpo; peachpayments; southafrica</PackageTags>
 	<RepositoryUrl>https://github.com/teesofttech/PayBridge</RepositoryUrl>
