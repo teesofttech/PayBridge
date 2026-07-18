@@ -4,14 +4,14 @@
 
 [![NuGet](https://img.shields.io/nuget/v/PayBridge.SDK)](https://www.nuget.org/packages/PayBridge.SDK)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/PayBridge.SDK)](https://www.nuget.org/packages/PayBridge.SDK)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/teesofttech/PayBridge/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/teesofttech/PayBridge/blob/master/LICENSE)
 [![GitHub](https://img.shields.io/badge/GitHub-teesofttech%2FPayBridge-blue)](https://github.com/teesofttech/PayBridge)
 
 ---
 
 ## What is PayBridge?
 
-PayBridge.SDK is an open-source .NET 8 library that provides a **single, unified interface** to 14+ payment gateways across Nigeria, Africa, and globally. Stop writing gateway-specific code — define your payment logic once and switch providers with a single configuration change.
+PayBridge.SDK is an open-source .NET 8 library that provides a **single, unified interface** to 15 payment gateways across Nigeria, Africa, and globally. Stop writing gateway-specific code — define your payment logic once and switch providers with a single configuration change.
 
 ---
 
@@ -33,17 +33,18 @@ PayBridge.SDK is an open-source .NET 8 library that provides a **single, unified
 | **PawaPay** | Africa (mobile money) | GHS, TZS, UGX, RWF, ZMW, … | REST ******
 | **BenefitPay** | Bahrain / GCC | BHD | Merchant API |
 | **Knet** | Kuwait | KWD | Transport Key |
+| **Peach Payments** | South Africa / Kenya / Nigeria / Botswana | ZAR, KES, NGN, BWP, USD | Bearer AccessToken + EntityId |
 
 ---
 
 ## Features
 
-- ✅ **Unified API** — one interface for all gateways: create, verify, and refund payments
+- ✅ **Unified API** — one interface across supported gateways for create, verify, and refund operations
 - ✅ **Smart Routing** — `Automatic` mode picks the best gateway based on currency
 - ✅ **Transaction Logging** — built-in persistence for auditing and reporting
 - ✅ **Multi-database Support** — SQL Server, PostgreSQL, MySQL, SQLite
 - ✅ **Clean Architecture** — repository pattern, DI-friendly, extensible
-- ✅ **Refund Support** — full create/verify/refund lifecycle for all gateways
+- ✅ **Refund APIs** — refund adapters are implemented across gateways; provider-side status and merchant entitlements determine runtime availability
 - ✅ **Sandbox / Production** — per-gateway environment toggle
 
 ---
@@ -425,6 +426,7 @@ Accepted `DatabaseProvider` values in `appsettings.json`:
 | `12` | OPay |
 | `13` | DPO Group |
 | `14` | PawaPay |
+| `15` | PeachPayments |
 
 ---
 
@@ -452,13 +454,13 @@ Accepted `DatabaseProvider` values in `appsettings.json`:
 
 ## Contributing
 
-Contributions are welcome! Please read our [Contributing Guide](https://github.com/teesofttech/PayBridge/blob/main/CONTRIBUTING.md) and open a Pull Request.
+Contributions are welcome! Please read our [Contributing Guide](https://github.com/teesofttech/PayBridge/blob/master/CONTRIBUTING.md) and open a Pull Request.
 
 ---
 
 ## License
 
-PayBridge.SDK is licensed under the [MIT License](https://github.com/teesofttech/PayBridge/blob/main/LICENSE).
+PayBridge.SDK is licensed under the [MIT License](https://github.com/teesofttech/PayBridge/blob/master/LICENSE).
 
 ---
 
