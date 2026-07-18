@@ -28,7 +28,7 @@ jobs:
         run: python3 -m unittest scripts/tests/test_integration_test_gate.py
 
       - name: Setup .NET 8
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '8.0.x'
 
