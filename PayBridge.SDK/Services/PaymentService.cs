@@ -196,7 +196,7 @@ public class PaymentService : IPaymentService
             request.SavedPaymentMethodId,
             request.AppName,
             request.Logo,
-            Metadata = request.Metadata.OrderBy(item => item.Key).ToArray(),
+            Metadata = request.Metadata.OrderBy(item => item.Key, StringComparer.Ordinal).ToArray(),
             Gateway = gateway
         });
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
