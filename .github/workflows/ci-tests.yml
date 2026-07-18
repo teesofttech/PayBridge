@@ -24,6 +24,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Test integration workflow gate
+        run: python3 -m unittest scripts/tests/test_integration_test_gate.py
+
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
         with:
@@ -68,4 +71,3 @@ jobs:
           reporter: dotnet-trx
           fail-on-error: true
           fail-on-empty: false
-
