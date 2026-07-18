@@ -4,6 +4,7 @@
 
 [![NuGet](https://img.shields.io/nuget/v/PayBridge.SDK)](https://www.nuget.org/packages/PayBridge.SDK)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/PayBridge.SDK)](https://www.nuget.org/packages/PayBridge.SDK)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-0f766e)](https://teesofttech.github.io/PayBridge/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/teesofttech/PayBridge/blob/master/LICENSE)
 [![GitHub](https://img.shields.io/badge/GitHub-teesofttech%2FPayBridge-blue)](https://github.com/teesofttech/PayBridge)
 
