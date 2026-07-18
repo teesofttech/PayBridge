@@ -175,7 +175,7 @@ public class PeachPaymentsConfig
     public string AccessToken { get; set; } = string.Empty;
 
     /// <summary>
-    /// Shared HMAC secret configured for Checkout webhook signing.
+    /// Shared HMAC secret configured for Peach Payments webhook signing.
     /// </summary>
     public string WebhookSecret { get; set; } = string.Empty;
 

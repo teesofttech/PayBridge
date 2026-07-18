@@ -1,9 +1,11 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using FluentAssertions;
 using PayBridge.SDK.Application.Dtos;
 using PayBridge.SDK.Dtos.Webhooks;
 using PayBridge.SDK.Enums;
+using PayBridge.SDK.Helper;
 using PayBridge.SDK.Services;
 using Xunit;
 
@@ -227,6 +229,37 @@ public class WebhookSignatureVerifierTests
 
         result.IsValid.Should().BeFalse();
         result.FailureReason.Should().Be(WebhookVerificationFailure.UnsupportedGateway);
+    }
+
+    [Theory]
+    [InlineData("{\"TransactionRef\":\"SQ_CARD_1\"}", "SQ_CARD_1")]
+    [InlineData("{\"Body\":{\"transaction_ref\":\"SQ_CARD_2\"}}", "SQ_CARD_2")]
+    public void ExtractReference_supports_documented_squad_card_payloads(
+        string json,
+        string expected)
+    {
+        using var document = JsonDocument.Parse(json);
+
+        var reference = GatewayExtractor.ExtractReferenceFromWebhook(
+            document.RootElement,
+            PaymentGatewayType.Squad);
+
+        reference.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ExtractReference_supports_peach_form_fields()
+    {
+        var fields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["merchantTransactionId"] = "PEACH_123"
+        };
+
+        var reference = GatewayExtractor.ExtractReferenceFromWebhook(
+            fields,
+            PaymentGatewayType.PeachPayments);
+
+        reference.Should().Be("PEACH_123");
     }
 
     private static WebhookSignatureVerifier CreateVerifier(

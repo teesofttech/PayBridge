@@ -146,7 +146,9 @@ public static class GatewayExtractor
                 GetString(webhookData, "eventData", "paymentReference"),
             PaymentGatewayType.Squad =>
                 GetString(webhookData, "transaction_ref") ??
-                GetString(webhookData, "transaction_reference"),
+                GetString(webhookData, "transaction_reference") ??
+                GetString(webhookData, "TransactionRef") ??
+                GetString(webhookData, "Body", "transaction_ref"),
             PaymentGatewayType.Korapay =>
                 GetString(webhookData, "data", "reference") ??
                 GetString(webhookData, "reference"),
@@ -155,6 +157,37 @@ public static class GatewayExtractor
                 GetString(webhookData, "merchant_transaction_id"),
             _ => null
         };
+    }
+
+    /// <summary>
+    /// Extracts a transaction reference from authenticated form fields.
+    /// </summary>
+    public static string? ExtractReferenceFromWebhook(
+        IReadOnlyDictionary<string, string> fields,
+        PaymentGatewayType gateway)
+    {
+        if (gateway != PaymentGatewayType.PeachPayments)
+        {
+            return null;
+        }
+
+        return GetValue(fields, "merchantTransactionId") ??
+            GetValue(fields, "merchant_transaction_id");
+    }
+
+    private static string? GetValue(
+        IReadOnlyDictionary<string, string> fields,
+        string name)
+    {
+        foreach (var field in fields)
+        {
+            if (field.Key.Equals(name, StringComparison.OrdinalIgnoreCase))
+            {
+                return field.Value;
+            }
+        }
+
+        return null;
     }
 
     private static string? GetString(JsonElement element, params string[] path)

@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.AspNetCore.WebUtilities;
+using System.Text;
 using System.Text.Json;
 using PayBridge.SDK.Application.Dtos.Request;
 using PayBridge.SDK.Dtos.Request;
@@ -247,58 +249,74 @@ public class PaymentController : ControllerBase
                 });
             }
 
-            JsonDocument webhookData;
-            try
+            string? reference;
+            if (gateway == PaymentGatewayType.PeachPayments &&
+                Request.ContentType?.StartsWith(
+                    "application/x-www-form-urlencoded",
+                    StringComparison.OrdinalIgnoreCase) == true)
             {
-                webhookData = JsonDocument.Parse(rawBody);
+                var fields = QueryHelpers.ParseQuery(Encoding.UTF8.GetString(rawBody))
+                    .ToDictionary(
+                        field => field.Key,
+                        field => field.Value.ToString(),
+                        StringComparer.OrdinalIgnoreCase);
+                reference = GatewayExtractor.ExtractReferenceFromWebhook(fields, gateway);
             }
-            catch (JsonException)
+            else
             {
-                _logger.LogWarning("Rejected malformed {Gateway} webhook JSON", gateway);
-                return BadRequest(new ErrorResponse
+                JsonDocument webhookData;
+                try
                 {
-                    Message = "Webhook body is not valid JSON",
-                    ErrorCode = "INVALID_WEBHOOK"
-                });
-            }
-
-            using (webhookData)
-            {
-                string? reference = GatewayExtractor.ExtractReferenceFromWebhook(
-                    webhookData.RootElement,
-                    gateway);
-
-                if (string.IsNullOrWhiteSpace(reference))
+                    webhookData = JsonDocument.Parse(rawBody);
+                }
+                catch (JsonException)
                 {
-                    _logger.LogWarning("Could not extract transaction reference from webhook");
+                    _logger.LogWarning("Rejected malformed {Gateway} webhook JSON", gateway);
                     return BadRequest(new ErrorResponse
                     {
-                        Message = "Could not extract transaction reference from webhook",
+                        Message = "Webhook body is not valid JSON",
                         ErrorCode = "INVALID_WEBHOOK"
                     });
                 }
 
-                // Verify the payment status
-                var response = await _paymentService.VerifyPaymentAsync(reference, gateway);
-
-                if (response.Success)
+                using (webhookData)
                 {
-                    _logger.LogInformation("Webhook verification successful: {Reference}, Status: {Status}",
-                        reference, response.Status);
-
-                    // TODO: Update order status or trigger other business logic based on payment status
-
-                    return Ok(new { success = true });
+                    reference = GatewayExtractor.ExtractReferenceFromWebhook(
+                        webhookData.RootElement,
+                        gateway);
                 }
-                else
+            }
+
+            if (string.IsNullOrWhiteSpace(reference))
+            {
+                _logger.LogWarning("Could not extract transaction reference from webhook");
+                return BadRequest(new ErrorResponse
                 {
-                    _logger.LogWarning("Webhook verification failed: {Message}", response.Message);
-                    return BadRequest(new ErrorResponse
-                    {
-                        Message = response.Message,
-                        ErrorCode = "WEBHOOK_VERIFICATION_FAILED"
-                    });
-                }
+                    Message = "Could not extract transaction reference from webhook",
+                    ErrorCode = "INVALID_WEBHOOK"
+                });
+            }
+
+            // Verify the payment status
+            var response = await _paymentService.VerifyPaymentAsync(reference, gateway);
+
+            if (response.Success)
+            {
+                _logger.LogInformation("Webhook verification successful: {Reference}, Status: {Status}",
+                    reference, response.Status);
+
+                // TODO: Update order status or trigger other business logic based on payment status
+
+                return Ok(new { success = true });
+            }
+            else
+            {
+                _logger.LogWarning("Webhook verification failed: {Message}", response.Message);
+                return BadRequest(new ErrorResponse
+                {
+                    Message = response.Message,
+                    ErrorCode = "WEBHOOK_VERIFICATION_FAILED"
+                });
             }
         }
         catch (Exception ex)

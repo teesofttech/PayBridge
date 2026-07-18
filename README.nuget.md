@@ -150,7 +150,7 @@ var request = new PaymentRequest
     CustomerName    = "John Doe",
     CustomerPhone   = "+2348012345678",
     RedirectUrl     = "https://yourdomain.com/payment/callback",
-    WebhookUrl      = "https://yourdomain.com/api/webhook/Paystack",
+    WebhookUrl      = "https://yourdomain.com/api/payment/webhook/Flutterwave",
     PaymentMethodType = PaymentMethodType.Card,
     Metadata        = new Dictionary<string, string>
     {
@@ -171,6 +171,13 @@ if (response.Success)
     return Redirect(response.CheckoutUrl);
 }
 ```
+
+The Presentation controller's secure callback route is
+`/api/payment/webhook/{gateway}`; the Example application's route is
+`/api/webhook/{gateway}`. The route gateway must match the provider used for the
+payment. For automatic selection, configure a matching callback URL per
+provider in its dashboard or determine the selected provider before supplying a
+request-level callback URL.
 
 **Sample Response:**
 

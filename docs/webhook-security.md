@@ -27,6 +27,14 @@ mechanism and is not used by the secure endpoint.
 | Korapay | `x-korapay-signature` | HMAC-SHA256 of the raw `data` object with secret key | Provider reference plus application idempotency |
 | Peach Payments | `x-webhook-*` headers | HMAC-SHA256 of `timestamp.id.url.rawBody` with webhook secret | Signed timestamp and webhook ID, five-minute default tolerance |
 
+Peach Payments sends the initial configuration event as JSON and regular
+Checkout events as `application/x-www-form-urlencoded`; both formats are parsed
+only after the same raw-body signature succeeds.
+
+Flutterwave's current webhook contract uses the `flutterwave-signature` HMAC
+header. Older Flutterwave integrations may use the legacy `verif-hash` shared
+secret header; that legacy contract is not accepted by this verifier.
+
 Signature comparisons use constant-time byte comparison. Missing configuration,
 missing or malformed headers, unknown providers, and invalid signatures fail
 closed with HTTP 401. Full bodies, signatures, and credentials are never logged.

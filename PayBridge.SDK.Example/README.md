@@ -150,12 +150,15 @@ pick the best available gateway based on the currency.
   "customerEmail": "jane@example.com",
   "customerName": "Jane Doe",
   "redirectUrl": "http://localhost:5xxx/api/verify",
-  "webhookUrl": "https://your-ngrok-url.ngrok.io/api/webhook/Flutterwave"
+  "webhookUrl": "https://your-ngrok-url.ngrok.io/api/webhook/Stripe"
 }
 ```
 
 The SDK will route USD to Stripe if it is enabled, or fall back to the
-`DefaultGateway` configured in `appsettings.json`.
+`DefaultGateway` configured in `appsettings.json`. A secure webhook URL must
+name the provider that will be selected. In production, configure each
+provider's matching `/api/webhook/{gateway}` URL in its dashboard; if fallback
+can select a different provider, do not reuse a Stripe URL for that provider.
 
 ---
 
