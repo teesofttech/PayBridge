@@ -13,6 +13,10 @@ Run the same audit locally:
 ./scripts/check-vulnerable-packages.sh
 ```
 
+For credential exposure response (rotation + history rewrite), follow:
+
+- [Credential rotation and history purge](./credential-rotation-and-history-purge.md)
+
 ## July 2026 remediation
 
 The .NET 8 dependency graph previously resolved vulnerable transitive versions
