@@ -10,6 +10,8 @@ using PayBridge.SDK.Enums;
 using PayBridge.SDK.Example.Models;
 using PayBridge.SDK.Example.Services;
 using Serilog;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Threading.RateLimiting;
 
 // ── 1. LOGGING (optional — any ILogger provider works) ────────────────────
@@ -39,6 +41,7 @@ builder.Logging.AddSerilog(log);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+var demoUiRequestsPerMinute = builder.Configuration.GetValue<int>($"{DemoUiSecurityOptions.SectionName}:RequestsPerMinute", 60);
 builder.Services.AddRateLimiter(options =>
 {
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(_ =>
@@ -46,7 +49,7 @@ builder.Services.AddRateLimiter(options =>
             partitionKey: "global",
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 60,
+                PermitLimit = demoUiRequestsPerMinute,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0,
                 AutoReplenishment = true
@@ -191,7 +194,7 @@ app.Use(async (context, next) =>
     if (isHosted && demoSecurity.RequireAuthenticatedAccess && !isProviderCallback)
     {
         var suppliedApiKey = context.Request.Headers["X-Demo-Api-Key"].ToString();
-        if (!string.Equals(suppliedApiKey, demoSecurity.ApiKey, StringComparison.Ordinal))
+        if (!IsFixedTimeMatch(suppliedApiKey, demoSecurity.ApiKey))
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             await context.Response.WriteAsJsonAsync(new { error = "unauthorized" });
@@ -199,11 +202,16 @@ app.Use(async (context, next) =>
         }
     }
 
-    if (isHosted && demoSecurity.RequireCsrfHeader && !isProviderCallback &&
-        HttpMethods.IsPost(context.Request.Method))
+    var isStateChangingMethod =
+        HttpMethods.IsPost(context.Request.Method) ||
+        HttpMethods.IsPut(context.Request.Method) ||
+        HttpMethods.IsPatch(context.Request.Method) ||
+        HttpMethods.IsDelete(context.Request.Method);
+
+    if (isHosted && demoSecurity.RequireCsrfHeader && !isProviderCallback && isStateChangingMethod)
     {
         var suppliedCsrf = context.Request.Headers[demoSecurity.CsrfHeaderName].ToString();
-        if (!string.Equals(suppliedCsrf, demoSecurity.CsrfHeaderValue, StringComparison.Ordinal))
+        if (!IsFixedTimeMatch(suppliedCsrf, demoSecurity.CsrfHeaderValue))
         {
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
             await context.Response.WriteAsJsonAsync(new { error = "invalid_csrf" });
@@ -225,3 +233,11 @@ app.UseHttpsRedirection();
 app.MapControllers();
 
 app.Run();
+
+static bool IsFixedTimeMatch(string supplied, string expected)
+{
+    return supplied.Length == expected.Length &&
+           CryptographicOperations.FixedTimeEquals(
+               MemoryMarshal.AsBytes(supplied.AsSpan()),
+               MemoryMarshal.AsBytes(expected.AsSpan()));
+}

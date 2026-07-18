@@ -24,6 +24,10 @@ public sealed class DemoUiSecurityOptionsValidator : IValidateOptions<DemoUiSecu
         {
             failures.Add("DemoUiSecurity:ApiKey is required when DemoUiSecurity:RequireAuthenticatedAccess is true.");
         }
+        else if (options.RequireAuthenticatedAccess && IsPlaceholderSecret(options.ApiKey))
+        {
+            failures.Add("DemoUiSecurity:ApiKey cannot use placeholder values in hosted mode.");
+        }
 
         if (options.RequireCsrfHeader)
         {
@@ -36,10 +40,22 @@ public sealed class DemoUiSecurityOptionsValidator : IValidateOptions<DemoUiSecu
             {
                 failures.Add("DemoUiSecurity:CsrfHeaderValue is required when DemoUiSecurity:RequireCsrfHeader is true.");
             }
+            else if (IsPlaceholderSecret(options.CsrfHeaderValue))
+            {
+                failures.Add("DemoUiSecurity:CsrfHeaderValue cannot use placeholder values when CSRF protection is enabled.");
+            }
         }
 
         return failures.Count == 0
             ? ValidateOptionsResult.Success
             : ValidateOptionsResult.Fail(failures);
+    }
+
+    private static bool IsPlaceholderSecret(string value)
+    {
+        var trimmed = value.Trim();
+        return trimmed.StartsWith("YOUR_", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.StartsWith("CHANGE_ME", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.Equals("REPLACE_ME", StringComparison.OrdinalIgnoreCase);
     }
 }

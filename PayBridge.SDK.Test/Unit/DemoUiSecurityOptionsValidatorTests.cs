@@ -37,6 +37,20 @@ public class DemoUiSecurityOptionsValidatorTests
     }
 
     [Fact]
+    public void Validate_rejects_placeholder_api_key_when_hosted_access_is_required()
+    {
+        var validator = new DemoUiSecurityOptionsValidator();
+        var options = NewOptions();
+        options.RequireAuthenticatedAccess = true;
+        options.ApiKey = "YOUR_DEMO_API_KEY";
+
+        var result = validator.Validate(null, options);
+
+        result.Failed.Should().BeTrue();
+        result.Failures.Should().Contain(item => item.Contains("ApiKey cannot use placeholder"));
+    }
+
+    [Fact]
     public void Validate_rejects_missing_csrf_values_when_csrf_protection_is_enabled()
     {
         var validator = new DemoUiSecurityOptionsValidator();
@@ -50,6 +64,20 @@ public class DemoUiSecurityOptionsValidatorTests
         result.Failed.Should().BeTrue();
         result.Failures.Should().Contain(item => item.Contains("CsrfHeaderName is required"));
         result.Failures.Should().Contain(item => item.Contains("CsrfHeaderValue is required"));
+    }
+
+    [Fact]
+    public void Validate_rejects_placeholder_csrf_value_when_csrf_protection_is_enabled()
+    {
+        var validator = new DemoUiSecurityOptionsValidator();
+        var options = NewOptions();
+        options.RequireCsrfHeader = true;
+        options.CsrfHeaderValue = "YOUR_DEMO_CSRF_TOKEN";
+
+        var result = validator.Validate(null, options);
+
+        result.Failed.Should().BeTrue();
+        result.Failures.Should().Contain(item => item.Contains("CsrfHeaderValue cannot use placeholder"));
     }
 
     [Fact]
