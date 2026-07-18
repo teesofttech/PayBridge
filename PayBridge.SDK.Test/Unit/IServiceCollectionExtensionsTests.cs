@@ -103,6 +103,20 @@ public class IServiceCollectionExtensionsTests
         provider.GetRequiredService<TimeProvider>().Should().BeSameAs(customTimeProvider);
     }
 
+    [Fact]
+    public void AddPayBridge_RegistersRefundRepository()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+
+        services.AddPayBridge(BuildConfiguration([]));
+
+        services.Should().Contain(descriptor =>
+            descriptor.ServiceType == typeof(IRefundRepository) &&
+            descriptor.ImplementationType == typeof(RefundRepository) &&
+            descriptor.Lifetime == ServiceLifetime.Scoped);
+    }
+
     private static IConfiguration BuildConfiguration(Dictionary<string, string?> values)
     {
         return new ConfigurationBuilder()
