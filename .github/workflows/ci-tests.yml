@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Test integration workflow gate
         run: python3 -m unittest scripts/tests/test_integration_test_gate.py
