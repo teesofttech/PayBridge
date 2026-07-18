@@ -5,13 +5,17 @@ on:
   workflow_dispatch:
     inputs:
       gateway:
-        description: 'Gateway to test (e.g. paystack, flutterwave, all)'
-        required: false
+        description: 'Sandbox provider test suite to run'
+        required: true
+        type: choice
+        options:
+          - all
+          - peachpayments
         default: 'all'
 
-  # Also run nightly on master so regressions are caught early
+  # Run weekly on master; increase frequency once sandbox credentials are stable
   schedule:
-    - cron: '0 2 * * *'   # 02:00 UTC every day
+    - cron: '0 2 * * 1'   # 02:00 UTC every Monday
 
 jobs:
   integration-tests:
@@ -33,6 +37,17 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: Validate provider selection and secrets
+        id: preflight
+        env:
+          SELECTED_GATEWAY: ${{ inputs.gateway || 'all' }}
+          PEACH_ENTITY_ID: ${{ secrets.PEACH_ENTITY_ID }}
+          PEACH_ACCESS_TOKEN: ${{ secrets.PEACH_ACCESS_TOKEN }}
+        run: |
+          python3 scripts/integration_test_gate.py plan \
+            --gateway "$SELECTED_GATEWAY" \
+            --github-output "$GITHUB_OUTPUT"
+
       - name: Restore dependencies
         run: dotnet restore PayBridge.SDK.sln
 
@@ -40,44 +55,26 @@ jobs:
         run: dotnet build PayBridge.SDK.sln --configuration Release --no-restore
 
       - name: Run integration tests
+        id: integration_tests
+        continue-on-error: true
         env:
-          # ── Nigerian gateways ────────────────────────────────────────────────
-          PAYSTACK_SECRET_KEY:          ${{ secrets.PAYSTACK_SECRET_KEY }}
-          FLUTTERWAVE_SECRET_KEY:       ${{ secrets.FLUTTERWAVE_SECRET_KEY }}
-          MONNIFY_API_KEY:              ${{ secrets.MONNIFY_API_KEY }}
-          MONNIFY_SECRET_KEY:           ${{ secrets.MONNIFY_SECRET_KEY }}
-          MONNIFY_CONTRACT_CODE:        ${{ secrets.MONNIFY_CONTRACT_CODE }}
-          SQUAD_SECRET_KEY:             ${{ secrets.SQUAD_SECRET_KEY }}
-          SQUAD_IS_SANDBOX:             'true'
-          KORAPAY_SECRET_KEY:           ${{ secrets.KORAPAY_SECRET_KEY }}
-          INTERSWITCH_CLIENT_ID:        ${{ secrets.INTERSWITCH_CLIENT_ID }}
-          INTERSWITCH_CLIENT_SECRET:    ${{ secrets.INTERSWITCH_CLIENT_SECRET }}
-          REMITA_MERCHANT_ID:           ${{ secrets.REMITA_MERCHANT_ID }}
-          REMITA_API_KEY:               ${{ secrets.REMITA_API_KEY }}
-          REMITA_SERVICE_TYPE_ID:       ${{ secrets.REMITA_SERVICE_TYPE_ID }}
-          OPAY_MERCHANT_ID:             ${{ secrets.OPAY_MERCHANT_ID }}
-          OPAY_PUBLIC_KEY:              ${{ secrets.OPAY_PUBLIC_KEY }}
-          OPAY_PRIVATE_KEY:             ${{ secrets.OPAY_PRIVATE_KEY }}
-          # ── African / global gateways ────────────────────────────────────────
-          DPO_COMPANY_TOKEN:            ${{ secrets.DPO_COMPANY_TOKEN }}
-          DPO_SERVICE_TYPE:             ${{ secrets.DPO_SERVICE_TYPE }}
-          PAWAPAY_API_TOKEN:            ${{ secrets.PAWAPAY_API_TOKEN }}
-          PEACH_ENTITY_ID:              ${{ secrets.PEACH_ENTITY_ID }}
-          PEACH_ACCESS_TOKEN:           ${{ secrets.PEACH_ACCESS_TOKEN }}
-          # ── Global gateways ──────────────────────────────────────────────────
-          STRIPE_SECRET_KEY:            ${{ secrets.STRIPE_SECRET_KEY }}
-          CHECKOUT_SECRET_KEY:          ${{ secrets.CHECKOUT_SECRET_KEY }}
-          BENEFITPAY_MERCHANT_ID:       ${{ secrets.BENEFITPAY_MERCHANT_ID }}
-          BENEFITPAY_API_KEY:           ${{ secrets.BENEFITPAY_API_KEY }}
-          KNET_TRANSPORT_ID:            ${{ secrets.KNET_TRANSPORT_ID }}
-          KNET_PASSWORD:                ${{ secrets.KNET_PASSWORD }}
+          PEACH_ENTITY_ID: ${{ secrets.PEACH_ENTITY_ID }}
+          PEACH_ACCESS_TOKEN: ${{ secrets.PEACH_ACCESS_TOKEN }}
         run: |
           dotnet test PayBridge.SDK.Test/PayBridge.SDK.Test.csproj \
             --configuration Release \
             --no-build \
-            --filter "Category=Integration" \
+            --filter "Category=Integration&${{ steps.preflight.outputs.test_filter }}" \
             --logger "trx;LogFileName=integration-test-results.trx" \
             --results-directory ./TestResults
+
+      - name: Validate and summarize integration results
+        if: always()
+        run: |
+          python3 scripts/integration_test_gate.py summarize \
+            --provider "${{ steps.preflight.outputs.provider }}" \
+            --trx ./TestResults/integration-test-results.trx \
+            --github-summary "$GITHUB_STEP_SUMMARY"
 
       - name: Upload integration test results
         uses: actions/upload-artifact@v4
@@ -85,6 +82,7 @@ jobs:
         with:
           name: integration-test-results
           path: ./TestResults/*.trx
+          if-no-files-found: error
 
       - name: Publish test results
         uses: dorny/test-reporter@v1
@@ -93,4 +91,4 @@ jobs:
           name: Integration Test Results
           path: ./TestResults/*.trx
           reporter: dotnet-trx
-          fail-on-error: false   # don't fail the workflow if sandbox keys are missing
+          fail-on-error: false   # the tested result gate above owns job failure
