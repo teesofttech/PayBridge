@@ -10,4 +10,10 @@ public class PayBridgeDbContext : DbContext
 
     public DbSet<PaymentTransaction> Transactions { get; set; }
     public DbSet<RefundTransaction> Refunds { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<RefundTransaction>()
+            .HasIndex(refund => new { refund.PaymentTransactionReference, refund.Status });
+    }
 }

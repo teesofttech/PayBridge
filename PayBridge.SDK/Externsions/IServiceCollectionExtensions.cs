@@ -131,6 +131,7 @@ public static class IServiceCollectionExtensions
         // Register core services
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
+        services.AddScoped<IRefundRepository, RefundRepository>();
         services.AddScoped<PaymentGatewayFactory>();
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<IWebhookSignatureVerifier, WebhookSignatureVerifier>();

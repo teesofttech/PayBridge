@@ -15,17 +15,20 @@ namespace PayBridge.SDK;
 public class PaymentService : IPaymentService
 {
     private readonly ITransactionRepository _transactionRepository;
+    private readonly IRefundRepository _refundRepository;
     private readonly Dictionary<PaymentGatewayType, IPaymentGateway> _gateways;
     private readonly ILogger<PaymentService> _logger;
     private readonly PaymentGatewayConfig _config;
 
     public PaymentService(
         ITransactionRepository transactionRepository,
+        IRefundRepository refundRepository,
         IEnumerable<IPaymentGateway> gateways,  // Inject all gateways directly
         ILogger<PaymentService> logger,
         PaymentGatewayConfig config)
     {
         _transactionRepository = transactionRepository ?? throw new ArgumentNullException(nameof(transactionRepository));
+        _refundRepository = refundRepository ?? throw new ArgumentNullException(nameof(refundRepository));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _config = config ?? throw new ArgumentNullException(nameof(config));
 
@@ -190,14 +193,6 @@ public class PaymentService : IPaymentService
             throw new PaymentGatewayException($"Transaction not in refundable state: {transaction.Status}");
         }
 
-        // Verify refund amount does not exceed transaction amount
-        if (request.Amount > transaction.Amount)
-        {
-            _logger.LogError("Refund amount exceeds transaction amount: {RefundAmount} > {TransactionAmount}",
-                request.Amount, transaction.Amount);
-            throw new PaymentGatewayException($"Refund amount exceeds transaction amount");
-        }
-
         PaymentGatewayType selectedGateway = transaction.Gateway;
         if (!_gateways.ContainsKey(selectedGateway))
         {
@@ -205,32 +200,71 @@ public class PaymentService : IPaymentService
             throw new PaymentGatewayException($"Gateway {selectedGateway} is not configured");
         }
 
+        var refund = new RefundTransaction
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            PaymentTransactionReference = request.TransactionReference,
+            Amount = request.Amount,
+            Currency = transaction.Currency,
+            Reason = request.Reason,
+            Status = PaymentStatus.Pending,
+            Gateway = selectedGateway,
+            CreatedAt = DateTime.UtcNow
+        };
+        refund.RefundReference = refund.Id;
+
+        if (!await _refundRepository.TryReserveAsync(refund, transaction.Amount))
+        {
+            _logger.LogWarning(
+                "Refund amount exceeds refundable balance for {Reference}",
+                request.TransactionReference);
+            throw new PaymentGatewayException("Refund amount exceeds refundable balance");
+        }
+
+        RefundResponse response;
         try
         {
-            var response = await _gateways[selectedGateway].RefundPaymentAsync(request);
-
-            _logger.LogInformation("Refund processing {Status}: {Reference}, Refund Reference: {RefundReference}",
-                response.Success ? "successful" : "failed", request.TransactionReference, response.RefundReference);
-
-            if (response.Success)
-            {
-                // Update transaction status if full refund
-                if (request.Amount >= transaction.Amount)
-                {
-                    transaction.Status = PaymentStatus.Refunded;
-                    await _transactionRepository.UpdateAsync(transaction);
-                }
-
-                // TODO: Save refund record to refund repository if implemented
-            }
-
-            return response;
+            response = await _gateways[selectedGateway].RefundPaymentAsync(request);
         }
         catch (Exception ex)
         {
+            refund.Status = PaymentStatus.Failed;
+            refund.ProcessedAt = DateTime.UtcNow;
+            refund.GatewayResponse = JsonSerializer.Serialize(new
+            {
+                ErrorType = ex.GetType().Name
+            });
+            await _refundRepository.UpdateAsync(refund);
             _logger.LogError(ex, "Refund processing failed with {Gateway}", selectedGateway);
             throw new PaymentGatewayException($"Refund processing failed with {selectedGateway}", ex);
         }
+
+        _logger.LogInformation("Refund processing {Status}: {Reference}, Refund Reference: {RefundReference}",
+            response.Success ? "successful" : "failed", request.TransactionReference, response.RefundReference);
+
+        refund.RefundReference = string.IsNullOrWhiteSpace(response.RefundReference)
+            ? refund.Id
+            : response.RefundReference;
+        refund.Status = response.Success ? response.Status : PaymentStatus.Failed;
+        refund.ProcessedAt = refund.Status == PaymentStatus.Pending ? null : DateTime.UtcNow;
+        refund.GatewayResponse = JsonSerializer.Serialize(response);
+        await _refundRepository.UpdateAsync(refund);
+
+        if (refund.Status == PaymentStatus.Refunded)
+        {
+            var refunds = await _refundRepository.GetByPaymentReferenceAsync(
+                request.TransactionReference);
+            var confirmedAmount = refunds
+                .Where(item => item.Status == PaymentStatus.Refunded)
+                .Sum(item => item.Amount);
+            if (confirmedAmount >= transaction.Amount)
+            {
+                transaction.Status = PaymentStatus.Refunded;
+                await _transactionRepository.UpdateAsync(transaction);
+            }
+        }
+
+        return response;
     }
 
     private PaymentGatewayType SelectBestGateway(PaymentRequest request)

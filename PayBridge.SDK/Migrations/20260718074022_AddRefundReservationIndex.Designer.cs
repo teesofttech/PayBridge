@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PayBridge.SDK;
 
@@ -11,9 +12,11 @@ using PayBridge.SDK;
 namespace PayBridge.SDK.Migrations
 {
     [DbContext(typeof(PayBridgeDbContext))]
-    partial class PayBridgeDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260718074022_AddRefundReservationIndex")]
+    partial class AddRefundReservationIndex
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
