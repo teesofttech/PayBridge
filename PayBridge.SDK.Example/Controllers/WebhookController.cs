@@ -43,17 +43,20 @@ public class WebhookController : ControllerBase
     private readonly IPaymentService _payment;
     private readonly IWebhookSignatureVerifier _webhookVerifier;
     private readonly OrderService _orders;
+    private readonly IWebhookReplayStore _replayStore;
     private readonly ILogger<WebhookController> _log;
 
     public WebhookController(
         IPaymentService paymentService,
         IWebhookSignatureVerifier webhookVerifier,
         OrderService orderService,
+        IWebhookReplayStore replayStore,
         ILogger<WebhookController> logger)
     {
         _payment = paymentService;
         _webhookVerifier = webhookVerifier;
         _orders = orderService;
+        _replayStore = replayStore;
         _log = logger;
     }
 
@@ -161,6 +164,12 @@ public class WebhookController : ControllerBase
             return BadRequest(new { received = true, processed = false, reason = "no_reference" });
         }
 
+        if (!_replayStore.TryStart(gateway, rawBody, out var receiptId))
+        {
+            _log.LogInformation("Ignored replayed {Gateway} webhook", gateway);
+            return Ok(new { received = true, processed = false, duplicate = true });
+        }
+
         _log.LogInformation(
             "Authenticated {Gateway} webhook for {Reference}",
             gateway,
@@ -170,66 +179,77 @@ public class WebhookController : ControllerBase
         //
         // NEVER trust the webhook body alone — always call VerifyPaymentAsync to
         // confirm the transaction status server-side before fulfilling the order.
-        var paymentVerification = await _payment.VerifyPaymentAsync(reference, gateway);
-
-        if (!paymentVerification.Success ||
-            paymentVerification.Status != PaymentStatus.Successful)
+        try
         {
-            _log.LogWarning(
-                "Webhook for {Reference} — verification failed or status={Status}",
-                reference,
-                paymentVerification.Status);
+            var paymentVerification = await _payment.VerifyPaymentAsync(reference, gateway);
+
+            if (!paymentVerification.Success ||
+                paymentVerification.Status != PaymentStatus.Successful)
+            {
+                _replayStore.Abandon(receiptId);
+                _log.LogWarning(
+                    "Webhook for {Reference} — verification failed or status={Status}",
+                    reference,
+                    paymentVerification.Status);
+
+                return Ok(new
+                {
+                    received = true,
+                    processed = false,
+                    status = paymentVerification.Status.ToString()
+                });
+            }
+
+            // ── Step 4: fulfil the order ──────────────────────────────────────────
+            //
+            // Look up the order using the orderId we embedded in Metadata, then mark
+            // it as paid. In a real app you'd:
+            //   • Send a confirmation email
+            //   • Provision the purchased product / subscription
+            //   • Emit a domain event for downstream services
+            var orderId = paymentVerification.Metadata.GetValueOrDefault("orderId")
+                       ?? _orders.GetByTransactionRef(reference)?.OrderId;
+            var order = orderId is null ? null : _orders.GetById(orderId);
+
+            if (order is not null &&
+                paymentVerification.TransactionReference.Equals(
+                    reference,
+                    StringComparison.Ordinal) &&
+                paymentVerification.Amount == order.Amount &&
+                paymentVerification.Currency.Equals(
+                    order.Currency,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                _orders.MarkAsPaid(order.OrderId, reference);
+                _replayStore.Complete(receiptId);
+                _log.LogInformation("Order {OrderId} marked as paid ✓", order.OrderId);
+            }
+            else
+            {
+                _replayStore.Abandon(receiptId);
+                _log.LogWarning(
+                    "Verified payment {Reference} did not match the original order",
+                    reference);
+                return Ok(new
+                {
+                    received = true,
+                    processed = false,
+                    status = "order_mismatch"
+                });
+            }
 
             return Ok(new
             {
                 received = true,
-                processed = false,
-                status = paymentVerification.Status.ToString()
-            });
-        }
-
-        // ── Step 4: fulfil the order ──────────────────────────────────────────
-        //
-        // Look up the order using the orderId we embedded in Metadata, then mark
-        // it as paid. In a real app you'd:
-        //   • Send a confirmation email
-        //   • Provision the purchased product / subscription
-        //   • Emit a domain event for downstream services
-        var orderId = paymentVerification.Metadata.GetValueOrDefault("orderId")
-                   ?? _orders.GetByTransactionRef(reference)?.OrderId;
-        var order = orderId is null ? null : _orders.GetById(orderId);
-
-        if (order is not null &&
-            paymentVerification.TransactionReference.Equals(
+                processed = true,
                 reference,
-                StringComparison.Ordinal) &&
-            paymentVerification.Amount == order.Amount &&
-            paymentVerification.Currency.Equals(
-                order.Currency,
-                StringComparison.OrdinalIgnoreCase))
-        {
-            _orders.MarkAsPaid(order.OrderId, reference);
-            _log.LogInformation("Order {OrderId} marked as paid ✓", order.OrderId);
-        }
-        else
-        {
-            _log.LogWarning(
-                "Verified payment {Reference} did not match the original order",
-                reference);
-            return Ok(new
-            {
-                received = true,
-                processed = false,
-                status = "order_mismatch"
+                gateway = gateway.ToString()
             });
         }
-
-        return Ok(new
+        catch
         {
-            received = true,
-            processed = true,
-            reference,
-            gateway = gateway.ToString()
-        });
+            _replayStore.Abandon(receiptId);
+            throw;
+        }
     }
 }

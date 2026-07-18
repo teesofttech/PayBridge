@@ -81,6 +81,7 @@ public class SecureWebhookControllerTests
             paymentService,
             verifier,
             new OrderService(),
+            new WebhookReplayStore(),
             NullLogger<WebhookController>.Instance)
         {
             ControllerContext = new ControllerContext

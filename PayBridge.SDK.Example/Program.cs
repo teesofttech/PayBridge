@@ -120,6 +120,8 @@ builder.Services.AddPayBridge(builder.Configuration, config =>
 // In a real app this would be your domain service / EF Core repository.
 
 builder.Services.AddSingleton<PayBridge.SDK.Example.Services.OrderService>();
+builder.Services.AddSingleton<PayBridge.SDK.Example.Services.IWebhookReplayStore,
+    PayBridge.SDK.Example.Services.WebhookReplayStore>();
 
 // ─────────────────────────────────────────────────────────────────────────────
 
