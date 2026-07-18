@@ -13,6 +13,16 @@ public class PayBridgeDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<PaymentTransaction>()
+            .HasIndex(transaction => transaction.IdempotencyKey)
+            .IsUnique();
+        modelBuilder.Entity<PaymentTransaction>()
+            .Property(transaction => transaction.IdempotencyKey)
+            .HasMaxLength(255);
+        modelBuilder.Entity<PaymentTransaction>()
+            .Property(transaction => transaction.RequestFingerprint)
+            .HasMaxLength(64);
+
         modelBuilder.Entity<RefundTransaction>()
             .HasIndex(refund => new { refund.PaymentTransactionReference, refund.Status });
     }

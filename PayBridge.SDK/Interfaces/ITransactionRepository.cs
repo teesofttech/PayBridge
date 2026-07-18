@@ -18,6 +18,8 @@ public interface ITransactionRepository
     /// <returns></returns>
     Task<PaymentTransaction?> GetByReferenceAsync(string reference);
 
+    Task<PaymentTransaction?> GetByIdempotencyKeyAsync(string idempotencyKey);
+
     /// <summary>
     /// updates an existing payment transaction
     /// </summary>
