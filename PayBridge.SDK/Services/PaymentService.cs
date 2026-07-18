@@ -435,12 +435,10 @@ public class PaymentService : IPaymentService
 
     private PaymentGatewayType SelectBestGateway(PaymentRequest request)
     {
-        // Logic to determine best gateway based on various factors
-
-        // If only one gateway is enabled, use that
-        if (_gateways.Count == 1)
+        if (request.PaymentMethodType == PaymentMethodType.Crypto)
         {
-            return _gateways.Keys.First();
+            throw new PaymentGatewayException(
+                "No configured gateway supports payment method Crypto.");
         }
 
         // Check for saved payment method - must use the same gateway
@@ -451,56 +449,58 @@ public class PaymentService : IPaymentService
         }
 
         // Select based on currency
-        switch (request.Currency?.ToUpper())
+        var compatibleGateways = request.Currency.ToUpperInvariant() switch
         {
-            case "NGN":
-                return ChooseAvailableGateway(PaymentGatewayType.Monnify, PaymentGatewayType.Squad, PaymentGatewayType.Korapay, PaymentGatewayType.Interswitch, PaymentGatewayType.Remita, PaymentGatewayType.Opay, PaymentGatewayType.Paystack, PaymentGatewayType.Flutterwave);
+            "NGN" => new[] { PaymentGatewayType.Monnify, PaymentGatewayType.Squad, PaymentGatewayType.Korapay, PaymentGatewayType.Interswitch, PaymentGatewayType.Remita, PaymentGatewayType.Opay, PaymentGatewayType.Paystack, PaymentGatewayType.Flutterwave },
+            "KES" or "GHS" or "UGX" or "TZS" or "ZAR" or "RWF" or "ZMW" or
+                "CDF" or "XOF" or "XAF" or "MWK" =>
+                [PaymentGatewayType.PeachPayments, PaymentGatewayType.PawaPay, PaymentGatewayType.DpoGroup, PaymentGatewayType.Flutterwave, PaymentGatewayType.Paystack],
+            "BWP" => [PaymentGatewayType.PeachPayments, PaymentGatewayType.DpoGroup],
+            "BHD" => [PaymentGatewayType.BenefitPay],
+            "KWD" => [PaymentGatewayType.Knet],
+            "USD" or "EUR" or "GBP" => [PaymentGatewayType.Stripe, PaymentGatewayType.Checkout],
+            "JPY" => [PaymentGatewayType.Stripe],
+            _ => []
+        };
 
-            case "KES":
-            case "GHS":
-            case "UGX":
-            case "TZS":
-            case "ZAR":
-            case "RWF":
-            case "ZMW":
-            case "CDF":
-            case "XOF":
-            case "XAF":
-            case "MWK":
-                return ChooseAvailableGateway(PaymentGatewayType.PeachPayments, PaymentGatewayType.PawaPay, PaymentGatewayType.DpoGroup, PaymentGatewayType.Flutterwave, PaymentGatewayType.Paystack);
-
-            case "BWP":
-                return ChooseAvailableGateway(PaymentGatewayType.PeachPayments, PaymentGatewayType.DpoGroup);
-
-            case "BHD":
-                return ChooseAvailableGateway(PaymentGatewayType.BenefitPay);
-
-            case "KWD":
-                return ChooseAvailableGateway(PaymentGatewayType.Knet);
-
-            case "USD":
-            case "EUR":
-            case "GBP":
-            default:
-                return ChooseAvailableGateway(PaymentGatewayType.Stripe, PaymentGatewayType.Checkout);
-        }
+        return ChooseAvailableGateway(request, compatibleGateways);
     }
 
     #region [Private Methods]
 
-    private PaymentGatewayType ChooseAvailableGateway(params PaymentGatewayType[] preferredGateways)
+    private PaymentGatewayType ChooseAvailableGateway(
+        PaymentRequest request,
+        IReadOnlyCollection<PaymentGatewayType> compatibleGateways)
     {
+        if (_config.DefaultGateway != PaymentGatewayType.Automatic &&
+            compatibleGateways.Contains(_config.DefaultGateway) &&
+            _gateways.ContainsKey(_config.DefaultGateway))
+        {
+            _logger.LogInformation(
+                "Selected configured default gateway {Gateway} for {Currency} and {PaymentMethod}",
+                _config.DefaultGateway,
+                request.Currency,
+                request.PaymentMethodType);
+            return _config.DefaultGateway;
+        }
+
         // Try each gateway in order of preference
-        foreach (var gateway in preferredGateways)
+        foreach (var gateway in compatibleGateways)
         {
             if (_gateways.ContainsKey(gateway))
             {
+                _logger.LogInformation(
+                    "Selected compatible gateway {Gateway} for {Currency} and {PaymentMethod}",
+                    gateway,
+                    request.Currency,
+                    request.PaymentMethodType);
                 return gateway;
             }
         }
 
-        // Fall back to the first available gateway
-        return _gateways.Keys.First();
+        throw new PaymentGatewayException(
+            $"No configured gateway supports {request.Currency.ToUpperInvariant()} " +
+            $"with payment method {request.PaymentMethodType}.");
     }
 
     private PaymentGatewayType DetermineGatewayFromReference(string transactionReference)
