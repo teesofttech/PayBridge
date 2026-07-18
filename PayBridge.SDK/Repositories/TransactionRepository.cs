@@ -52,6 +52,13 @@ public class TransactionRepository(PayBridgeDbContext dbContext, ILogger<Transac
             .FirstOrDefaultAsync(t => t.TransactionReference == reference);
     }
 
+    public async Task<PaymentTransaction?> GetByIdempotencyKeyAsync(string idempotencyKey)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(idempotencyKey);
+        return await _dbContext.Transactions
+            .FirstOrDefaultAsync(transaction => transaction.IdempotencyKey == idempotencyKey);
+    }
+
     /// <inheritdoc/>
     public async Task<IEnumerable<PaymentTransaction>> GetByCustomerEmailAsync(string email)
     {

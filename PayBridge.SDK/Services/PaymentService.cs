@@ -9,11 +9,16 @@ using PayBridge.SDK.Enums;
 using PayBridge.SDK.Exceptions;
 using PayBridge.SDK.Interfaces;
 using System.Text.Json;
+using System.Security.Cryptography;
+using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 namespace PayBridge.SDK;
 
 public class PaymentService : IPaymentService
 {
+    private static readonly object IdempotencyLocksGate = new();
+    private static readonly Dictionary<string, IdempotencyLock> IdempotencyLocks = [];
     private readonly ITransactionRepository _transactionRepository;
     private readonly IRefundRepository _refundRepository;
     private readonly Dictionary<PaymentGatewayType, IPaymentGateway> _gateways;
@@ -60,6 +65,11 @@ public class PaymentService : IPaymentService
             throw new PaymentGatewayException($"Gateway {selectedGateway} is not configured");
         }
 
+        if (!string.IsNullOrWhiteSpace(request.IdempotencyKey))
+        {
+            return await CreateIdempotentPaymentAsync(request, selectedGateway);
+        }
+
         try
         {
             var response = await _gateways[selectedGateway].CreatePaymentAsync(request);
@@ -91,6 +101,160 @@ public class PaymentService : IPaymentService
             _logger.LogError(ex, "Payment processing failed with {Gateway}", selectedGateway);
             throw new PaymentGatewayException($"Payment processing failed with {selectedGateway}", ex);
         }
+    }
+
+    private async Task<PaymentResponse> CreateIdempotentPaymentAsync(
+        PaymentRequest request,
+        PaymentGatewayType selectedGateway)
+    {
+        if (request.IdempotencyKey!.Length > 255)
+        {
+            throw new ArgumentException("Idempotency key cannot exceed 255 characters.", nameof(request));
+        }
+
+        var key = request.IdempotencyKey;
+        var fingerprint = CreateFingerprint(request, selectedGateway);
+        var idempotencyLock = AcquireIdempotencyLock(key);
+        await idempotencyLock.Semaphore.WaitAsync();
+        try
+        {
+            var existing = await _transactionRepository.GetByIdempotencyKeyAsync(key);
+            if (existing is not null)
+            {
+                return ReplayIdempotentPayment(existing, fingerprint);
+            }
+
+            PaymentTransaction transaction;
+            try
+            {
+                transaction = await _transactionRepository.CreateAsync(new PaymentTransaction
+                {
+                    IdempotencyKey = key,
+                    RequestFingerprint = fingerprint,
+                    TransactionReference = $"IDEMPOTENCY-{Guid.NewGuid():N}",
+                    Amount = request.Amount,
+                    Currency = request.Currency,
+                    CustomerEmail = request.CustomerEmail,
+                    CustomerName = request.CustomerName,
+                    Status = PaymentStatus.Pending,
+                    Gateway = selectedGateway,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            catch (DbUpdateException)
+            {
+                existing = await _transactionRepository.GetByIdempotencyKeyAsync(key);
+                if (existing is null)
+                {
+                    throw;
+                }
+
+                return ReplayIdempotentPayment(existing, fingerprint);
+            }
+
+            try
+            {
+                var response = await _gateways[selectedGateway].CreatePaymentAsync(request);
+                transaction.TransactionReference = string.IsNullOrWhiteSpace(response.TransactionReference)
+                    ? transaction.TransactionReference
+                    : response.TransactionReference;
+                transaction.Status = response.Success ? response.Status : PaymentStatus.Failed;
+                transaction.GatewayResponse = JsonSerializer.Serialize(response);
+                await _transactionRepository.UpdateAsync(transaction);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Idempotent payment outcome is uncertain for {Gateway}", selectedGateway);
+                throw new PaymentGatewayException(
+                    $"Payment processing failed with {selectedGateway}; retry with the same idempotency key.", ex);
+            }
+        }
+        finally
+        {
+            idempotencyLock.Semaphore.Release();
+            ReleaseIdempotencyLock(key, idempotencyLock);
+        }
+    }
+
+    private static string CreateFingerprint(
+        PaymentRequest request,
+        PaymentGatewayType gateway)
+    {
+        var value = JsonSerializer.Serialize(new
+        {
+            request.Amount,
+            Currency = request.Currency.ToUpperInvariant(),
+            Email = request.CustomerEmail.Trim().ToUpperInvariant(),
+            request.CustomerName,
+            request.Description,
+            request.RedirectUrl,
+            request.WebhookUrl,
+            request.PaymentMethodType,
+            request.CustomerPhone,
+            request.SavedPaymentMethodId,
+            request.AppName,
+            request.Logo,
+            Metadata = request.Metadata.OrderBy(item => item.Key).ToArray(),
+            Gateway = gateway
+        });
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
+    }
+
+    private static PaymentResponse ReplayIdempotentPayment(
+        PaymentTransaction existing,
+        string fingerprint)
+    {
+        if (!CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(existing.RequestFingerprint),
+                Encoding.UTF8.GetBytes(fingerprint)))
+        {
+            throw new PaymentGatewayException(
+                "The idempotency key was already used with different payment parameters.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(existing.GatewayResponse))
+        {
+            return JsonSerializer.Deserialize<PaymentResponse>(existing.GatewayResponse)
+                ?? throw new PaymentGatewayException("The stored idempotent response is invalid.");
+        }
+
+        throw new PaymentGatewayException("The idempotent payment request is still processing.");
+    }
+
+    private static IdempotencyLock AcquireIdempotencyLock(string key)
+    {
+        lock (IdempotencyLocksGate)
+        {
+            if (!IdempotencyLocks.TryGetValue(key, out var value))
+            {
+                value = new IdempotencyLock();
+                IdempotencyLocks.Add(key, value);
+            }
+
+            value.Users++;
+            return value;
+        }
+    }
+
+    private static void ReleaseIdempotencyLock(string key, IdempotencyLock value)
+    {
+        lock (IdempotencyLocksGate)
+        {
+            value.Users--;
+            if (value.Users == 0)
+            {
+                IdempotencyLocks.Remove(key);
+                value.Semaphore.Dispose();
+            }
+        }
+    }
+
+    private sealed class IdempotencyLock
+    {
+        public SemaphoreSlim Semaphore { get; } = new(1, 1);
+        public int Users { get; set; }
     }
 
     /// <inheritdoc/>

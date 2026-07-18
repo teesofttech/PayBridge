@@ -3,6 +3,7 @@
 namespace PayBridge.SDK.Dtos.Request;
 public class PaymentRequest
 {
+    public string? IdempotencyKey { get; set; }
     public string? Logo { get; set; }
 
     public decimal Amount { get; set; }
