@@ -1,0 +1,63 @@
+site_name: PayBridge Documentation
+site_description: Production-ready integration and operations guide for PayBridge.SDK
+site_url: https://teesofttech.github.io/PayBridge/
+repo_url: https://github.com/teesofttech/PayBridge
+repo_name: teesofttech/PayBridge
+edit_uri: edit/master/docs/
+
+theme:
+  name: material
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+  language: en
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.top
+    - navigation.sections
+    - navigation.footer
+    - content.code.copy
+    - search.highlight
+    - search.suggest
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+extra_css:
+  - stylesheets/extra.css
+
+nav:
+  - Home: index.md
+  - Quick Start:
+      - Overview: quickstart.md
+      - Automatic Routing: automatic-gateway-routing.md
+      - Payment Idempotency: payment-idempotency.md
+  - Security:
+      - Webhook Security: webhook-security.md
+      - Webhook Replay Protection: webhook-replay-protection.md
+      - Dependency Security: dependency-security.md
+      - Credential Rotation: credential-rotation-and-history-purge.md
+  - Reliability:
+      - Integration Testing: integration-testing.md
+      - Refund Persistence: refund-persistence.md
+      - Flutterwave Refunds: flutterwave-refunds.md

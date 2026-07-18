@@ -5,6 +5,9 @@
 </p>
 
 <p align="center">
+  <a href="https://teesofttech.github.io/PayBridge/">
+    <img src="https://img.shields.io/badge/docs-GitHub%20Pages-0f766e" alt="Documentation">
+  </a>
   <a href="https://github.com/teesofttech/PayBridge/releases">
     <img src="https://img.shields.io/github/v/release/teesofttech/PayBridge" alt="Latest Release">
   </a>
@@ -24,6 +27,16 @@
   <a href="#-contributing">Contributing</a> •
   <a href="#-license">License</a>
 </p>
+
+---
+
+## Documentation Portal
+
+The redesigned docs site is published on GitHub Pages:
+
+- https://teesofttech.github.io/PayBridge/
+
+Use it as the canonical operational guide for setup, security hardening, routing, idempotency, and integration testing.
 
 ---
 
