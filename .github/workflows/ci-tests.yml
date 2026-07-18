@@ -63,7 +63,7 @@ jobs:
           path: ./TestResults/**/coverage.cobertura.xml
 
       - name: Publish test results (PR comment)
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         if: always()
         with:
           name: Unit Test Results

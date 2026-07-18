@@ -85,7 +85,7 @@ jobs:
           if-no-files-found: error
 
       - name: Publish test results
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         if: always()
         with:
           name: Integration Test Results
