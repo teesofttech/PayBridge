@@ -7,7 +7,10 @@
 
 using PayBridge.SDK;
 using PayBridge.SDK.Enums;
+using PayBridge.SDK.Example.Models;
+using PayBridge.SDK.Example.Services;
 using Serilog;
+using System.Threading.RateLimiting;
 
 // ── 1. LOGGING (optional — any ILogger provider works) ────────────────────
 //
@@ -36,6 +39,20 @@ builder.Logging.AddSerilog(log);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddRateLimiter(options =>
+{
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(_ =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: "global",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 60,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new()
@@ -53,6 +70,12 @@ builder.Services.AddSwaggerGen(c =>
     if (File.Exists(xmlPath))
         c.IncludeXmlComments(xmlPath);
 });
+
+builder.Services
+    .AddOptions<DemoUiSecurityOptions>()
+    .Bind(builder.Configuration.GetSection(DemoUiSecurityOptions.SectionName))
+    .ValidateOnStart();
+builder.Services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<DemoUiSecurityOptions>, DemoUiSecurityOptionsValidator>();
 
 // ── 3a. DATABASE (optional) ────────────────────────────────────────────────
 //
@@ -126,6 +149,8 @@ builder.Services.AddSingleton<PayBridge.SDK.Example.Services.IWebhookReplayStore
 // ─────────────────────────────────────────────────────────────────────────────
 
 var app = builder.Build();
+var demoSecurity = app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<DemoUiSecurityOptions>>().Value;
+var isHosted = !app.Environment.IsDevelopment();
 
 // ── 5. MIDDLEWARE PIPELINE ─────────────────────────────────────────────────
 
@@ -138,6 +163,63 @@ if (app.Environment.IsDevelopment())
         c.RoutePrefix = string.Empty; // Swagger at root "/"
     });
 }
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "no-referrer";
+    context.Response.Headers["Content-Security-Policy"] =
+        "default-src 'none'; frame-ancestors 'none'; base-uri 'none'";
+    await next();
+});
+
+app.UseRateLimiter();
+
+app.Use(async (context, next) =>
+{
+    if (!context.Request.Path.StartsWithSegments("/api"))
+    {
+        await next();
+        return;
+    }
+
+    var isProviderCallback =
+        context.Request.Path.StartsWithSegments("/api/webhook") ||
+        context.Request.Path.StartsWithSegments("/api/verify");
+
+    if (isHosted && demoSecurity.RequireAuthenticatedAccess && !isProviderCallback)
+    {
+        var suppliedApiKey = context.Request.Headers["X-Demo-Api-Key"].ToString();
+        if (!string.Equals(suppliedApiKey, demoSecurity.ApiKey, StringComparison.Ordinal))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            await context.Response.WriteAsJsonAsync(new { error = "unauthorized" });
+            return;
+        }
+    }
+
+    if (isHosted && demoSecurity.RequireCsrfHeader && !isProviderCallback &&
+        HttpMethods.IsPost(context.Request.Method))
+    {
+        var suppliedCsrf = context.Request.Headers[demoSecurity.CsrfHeaderName].ToString();
+        if (!string.Equals(suppliedCsrf, demoSecurity.CsrfHeaderValue, StringComparison.Ordinal))
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsJsonAsync(new { error = "invalid_csrf" });
+            return;
+        }
+    }
+
+    if (isHosted && demoSecurity.Mode == DemoRuntimeMode.Live && !demoSecurity.AllowLiveMode)
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        await context.Response.WriteAsJsonAsync(new { error = "live_mode_blocked" });
+        return;
+    }
+
+    await next();
+});
 
 app.UseHttpsRedirection();
 app.MapControllers();
