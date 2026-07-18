@@ -1,10 +1,11 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using PayBridge.SDK.Application.Dtos;
 using PayBridge.SDK.Enums;
+using PayBridge.SDK.Exceptions;
 using PayBridge.SDK.Interfaces;
 using PayBridge.SDK.Services;
 
@@ -125,6 +126,8 @@ public static class IServiceCollectionExtensions
         configuration?.GetSection("PaymentGatewayConfig").Bind(config);
         configAction?.Invoke(config);
 
+        ValidateDefaultGatewayConfiguration(config);
+
         services.AddSingleton(config);
         services.AddSingleton<IOptions<PaymentGatewayConfig>>(Options.Create(config));
 
@@ -164,10 +167,51 @@ public static class IServiceCollectionExtensions
             return;
         }
 
+        ValidateEnabledGatewayConfiguration(config);
+
         // Register only the enabled gateways
         foreach (var gateway in config.EnabledGateways)
         {
             RegisterGateway(services, gateway);
+        }
+    }
+
+    private static void ValidateEnabledGatewayConfiguration(PaymentGatewayConfig config)
+    {
+        foreach (var gateway in config.EnabledGateways)
+        {
+            if (gateway == PaymentGatewayType.Automatic)
+            {
+                throw new PaymentConfigurationException(
+                    "PaymentGatewayConfig:EnabledGateways cannot include Automatic. " +
+                    "Use concrete gateway types only.");
+            }
+
+            if (!IsGatewayConfigured(config, gateway))
+            {
+                throw new PaymentConfigurationException(
+                    $"Enabled gateway '{gateway}' is missing required configuration values.");
+            }
+        }
+    }
+
+    private static void ValidateDefaultGatewayConfiguration(PaymentGatewayConfig config)
+    {
+        if (config.DefaultGateway == PaymentGatewayType.Automatic)
+        {
+            return;
+        }
+
+        if (!IsGatewayConfigured(config, config.DefaultGateway))
+        {
+            throw new PaymentConfigurationException(
+                $"Default gateway '{config.DefaultGateway}' is missing required configuration values.");
+        }
+
+        if (config.EnabledGateways.Count > 0 && !config.EnabledGateways.Contains(config.DefaultGateway))
+        {
+            throw new PaymentConfigurationException(
+                $"Default gateway '{config.DefaultGateway}' must be included in EnabledGateways when explicit gateway registration is used.");
         }
     }
 

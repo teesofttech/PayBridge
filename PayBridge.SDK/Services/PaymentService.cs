@@ -441,11 +441,19 @@ public class PaymentService : IPaymentService
                 "No configured gateway supports payment method Crypto.");
         }
 
+        if (request.PaymentMethodType != PaymentMethodType.Card)
+        {
+            throw new PaymentGatewayException(
+                $"Automatic routing for payment method {request.PaymentMethodType} " +
+                "is not yet implemented. Specify a gateway explicitly.");
+        }
+
         // Check for saved payment method - must use the same gateway
         if (!string.IsNullOrEmpty(request.SavedPaymentMethodId))
         {
-            // TODO: Lookup saved payment method and return its gateway
-            // For now, fall through to other selection logic
+            throw new PaymentGatewayException(
+                "Saved payment method routing is not yet implemented. " +
+                "Specify a gateway explicitly until provider binding is available.");
         }
 
         // Select based on currency
@@ -580,9 +588,9 @@ public class PaymentService : IPaymentService
         {
             return PaymentGatewayType.PeachPayments;
         }
-        // Default to configured default gateway
-        _logger.LogWarning("Could not determine gateway from reference: {Reference}", transactionReference);
-        return _config.DefaultGateway;
+        throw new PaymentGatewayException(
+            $"Unable to determine gateway from transaction reference '{transactionReference}'. " +
+            "Specify a gateway explicitly for verification.");
     }
 
     private void ValidateRequest(PaymentRequest request)

@@ -5,6 +5,10 @@ compatibility list. A configured `DefaultGateway` is selected when it is both
 registered and compatible; otherwise PayBridge uses the deterministic order for
 that currency. DI registration order does not affect the result.
 
+Automatic routing currently supports `PaymentMethodType.Card` only. For
+`BankTransfer`, `MobileMoney`, `Wallet`, `Ussd`, and `QrCode`, specify a
+concrete gateway explicitly in the payment request.
+
 PayBridge rejects unknown currencies, unsupported payment methods, and cases
 where no compatible gateway is configured before making a provider request. It
 does not fall back to an arbitrary registered gateway.

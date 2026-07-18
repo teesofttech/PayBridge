@@ -73,6 +73,11 @@ public class PaymentServiceRoutingTests
     [Theory]
     [InlineData("ZZZ", PaymentMethodType.Card)]
     [InlineData("USD", PaymentMethodType.Crypto)]
+    [InlineData("NGN", PaymentMethodType.BankTransfer)]
+    [InlineData("KES", PaymentMethodType.MobileMoney)]
+    [InlineData("USD", PaymentMethodType.Wallet)]
+    [InlineData("NGN", PaymentMethodType.Ussd)]
+    [InlineData("NGN", PaymentMethodType.QrCode)]
     public async Task Unsupported_routes_fail_before_provider_call(
         string currency,
         PaymentMethodType method)
@@ -84,7 +89,11 @@ public class PaymentServiceRoutingTests
 
         var action = () => service.CreatePaymentAsync(request);
 
-        await action.Should().ThrowAsync<Exception>().WithMessage("*supports*");
+        var exception = await action.Should().ThrowAsync<Exception>();
+        var message = exception.Which.Message;
+        (message.Contains("supports", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("Specify a gateway explicitly", StringComparison.OrdinalIgnoreCase))
+            .Should().BeTrue();
         stripe.Verify(item => item.CreatePaymentAsync(It.IsAny<PaymentRequest>()), Times.Never);
     }
 
@@ -97,6 +106,42 @@ public class PaymentServiceRoutingTests
         await service.CreatePaymentAsync(Request("JPY"));
 
         stripe.Verify(item => item.CreatePaymentAsync(It.IsAny<PaymentRequest>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Automatic_routing_rejects_saved_payment_method_until_binding_is_implemented()
+    {
+        var stripe = Gateway(PaymentGatewayType.Stripe);
+        var service = CreateService(new PaymentGatewayConfig(), stripe.Object);
+        var request = Request("USD");
+        request.SavedPaymentMethodId = "pm_saved_123";
+
+        var action = () => service.CreatePaymentAsync(request);
+
+        await action.Should().ThrowAsync<Exception>()
+            .WithMessage("*Saved payment method routing is not yet implemented*");
+        stripe.Verify(item => item.CreatePaymentAsync(It.IsAny<PaymentRequest>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Verify_automatic_routing_rejects_unknown_reference_prefix()
+    {
+        var stripe = Gateway(PaymentGatewayType.Stripe);
+        var transactionRepository = new Mock<ITransactionRepository>();
+        transactionRepository.Setup(repository => repository.GetByReferenceAsync("UNKNOWN_123"))
+            .ReturnsAsync((PayBridge.SDK.Entities.PaymentTransaction?)null);
+        var service = new PaymentService(
+            transactionRepository.Object,
+            Mock.Of<IRefundRepository>(),
+            [stripe.Object],
+            NullLogger<PaymentService>.Instance,
+            new PaymentGatewayConfig { DefaultGateway = PaymentGatewayType.Stripe });
+
+        var action = () => service.VerifyPaymentAsync("UNKNOWN_123");
+
+        await action.Should().ThrowAsync<Exception>()
+            .WithMessage("*Unable to determine gateway from transaction reference*");
+        stripe.Verify(item => item.VerifyPaymentAsync(It.IsAny<string>()), Times.Never);
     }
 
     private static PaymentService CreateService(
@@ -115,6 +160,8 @@ public class PaymentServiceRoutingTests
         gateway.SetupGet(item => item.GatewayType).Returns(type);
         gateway.Setup(item => item.CreatePaymentAsync(It.IsAny<PaymentRequest>()))
             .ReturnsAsync(new PaymentResponse { Success = false, Status = PaymentStatus.Failed });
+        gateway.Setup(item => item.VerifyPaymentAsync(It.IsAny<string>()))
+            .ReturnsAsync(new VerificationResponse { Success = false, Status = PaymentStatus.Failed });
         return gateway;
     }
 
