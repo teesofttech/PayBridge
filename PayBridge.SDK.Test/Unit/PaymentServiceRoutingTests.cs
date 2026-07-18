@@ -59,6 +59,19 @@ public class PaymentServiceRoutingTests
     }
 
     [Fact]
+    public async Task Unregistered_compatible_default_is_skipped()
+    {
+        var stripe = Gateway(PaymentGatewayType.Stripe);
+        var service = CreateService(
+            new PaymentGatewayConfig { DefaultGateway = PaymentGatewayType.Checkout },
+            stripe.Object);
+
+        await service.CreatePaymentAsync(Request("USD"));
+
+        stripe.Verify(item => item.CreatePaymentAsync(It.IsAny<PaymentRequest>()), Times.Once);
+    }
+
+    [Fact]
     public async Task Single_incompatible_gateway_does_not_bypass_routing_rules()
     {
         var checkout = Gateway(PaymentGatewayType.Checkout);
@@ -106,6 +119,45 @@ public class PaymentServiceRoutingTests
         await service.CreatePaymentAsync(Request("JPY"));
 
         stripe.Verify(item => item.CreatePaymentAsync(It.IsAny<PaymentRequest>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Automatic_routing_trims_currency_before_matching()
+    {
+        var stripe = Gateway(PaymentGatewayType.Stripe);
+        var service = CreateService(new PaymentGatewayConfig(), stripe.Object);
+
+        await service.CreatePaymentAsync(Request(" usd "));
+
+        stripe.Verify(item => item.CreatePaymentAsync(It.IsAny<PaymentRequest>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Explicit_gateway_rejects_crypto_before_provider_call()
+    {
+        var stripe = Gateway(PaymentGatewayType.Stripe);
+        var service = CreateService(new PaymentGatewayConfig(), stripe.Object);
+        var request = Request("USD");
+        request.PaymentMethodType = PaymentMethodType.Crypto;
+
+        var action = () => service.CreatePaymentAsync(request, PaymentGatewayType.Stripe);
+
+        await action.Should().ThrowAsync<Exception>()
+            .WithMessage("*payment method Crypto*");
+        stripe.Verify(item => item.CreatePaymentAsync(It.IsAny<PaymentRequest>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Unsupported_currency_message_uses_trimmed_normalized_currency()
+    {
+        var stripe = Gateway(PaymentGatewayType.Stripe);
+        var service = CreateService(new PaymentGatewayConfig(), stripe.Object);
+
+        var action = () => service.CreatePaymentAsync(Request(" zzz "));
+
+        await action.Should().ThrowAsync<Exception>()
+            .WithMessage("*supports ZZZ*");
+        stripe.Verify(item => item.CreatePaymentAsync(It.IsAny<PaymentRequest>()), Times.Never);
     }
 
     [Fact]

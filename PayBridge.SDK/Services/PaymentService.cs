@@ -45,6 +45,13 @@ public class PaymentService : IPaymentService
     public async Task<PaymentResponse> CreatePaymentAsync(PaymentRequest request, PaymentGatewayType gateway = PaymentGatewayType.Automatic)
     {
         ValidateRequest(request);
+        request.Currency = NormalizeCurrency(request.Currency);
+
+        if (request.PaymentMethodType == PaymentMethodType.Crypto)
+        {
+            throw new PaymentGatewayException(
+                "No configured gateway supports payment method Crypto.");
+        }
 
         if (_gateways.Count == 0)
         {
@@ -435,12 +442,6 @@ public class PaymentService : IPaymentService
 
     private PaymentGatewayType SelectBestGateway(PaymentRequest request)
     {
-        if (request.PaymentMethodType == PaymentMethodType.Crypto)
-        {
-            throw new PaymentGatewayException(
-                "No configured gateway supports payment method Crypto.");
-        }
-
         if (request.PaymentMethodType != PaymentMethodType.Card)
         {
             throw new PaymentGatewayException(
@@ -457,7 +458,8 @@ public class PaymentService : IPaymentService
         }
 
         // Select based on currency
-        var compatibleGateways = request.Currency.ToUpperInvariant() switch
+        var currency = NormalizeCurrency(request.Currency);
+        var compatibleGateways = currency switch
         {
             "NGN" => new[] { PaymentGatewayType.Monnify, PaymentGatewayType.Squad, PaymentGatewayType.Korapay, PaymentGatewayType.Interswitch, PaymentGatewayType.Remita, PaymentGatewayType.Opay, PaymentGatewayType.Paystack, PaymentGatewayType.Flutterwave },
             "KES" or "GHS" or "UGX" or "TZS" or "ZAR" or "RWF" or "ZMW" or
@@ -507,9 +509,12 @@ public class PaymentService : IPaymentService
         }
 
         throw new PaymentGatewayException(
-            $"No configured gateway supports {request.Currency.ToUpperInvariant()} " +
+            $"No configured gateway supports {NormalizeCurrency(request.Currency)} " +
             $"with payment method {request.PaymentMethodType}.");
     }
+
+    private static string NormalizeCurrency(string currency) =>
+        currency.Trim().ToUpperInvariant();
 
     private PaymentGatewayType DetermineGatewayFromReference(string transactionReference)
     {
