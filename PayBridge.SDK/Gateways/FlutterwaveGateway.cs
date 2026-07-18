@@ -11,11 +11,11 @@ using System.Text;
 using System.Text.Json;
 
 namespace PayBridge.SDK;
+
 public class FlutterwaveGateway : IPaymentGateway
 {
     private readonly PaymentGatewayConfig _config;
     private readonly HttpClient _httpClient;
-    private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<FlutterwaveGateway> _logger;
     private readonly string _baseUrl = "https://api.flutterwave.com";
     public FlutterwaveGateway(IOptions<PaymentGatewayConfig> config, ILogger<FlutterwaveGateway> logger, IHttpClientFactory httpClientFactory)
@@ -27,8 +27,7 @@ public class FlutterwaveGateway : IPaymentGateway
         }
         _logger = logger;
 
-        _httpClientFactory = httpClientFactory;
-        _httpClient = _httpClientFactory.CreateClient();
+        _httpClient = httpClientFactory.CreateClient();
         _httpClient.BaseAddress = new Uri(_baseUrl);
         _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _config.FlutterwaveConfig.SecretKey);
@@ -123,9 +122,131 @@ public class FlutterwaveGateway : IPaymentGateway
 
     }
 
-    public Task<RefundResponse> RefundPaymentAsync(RefundRequest request)
+    public async Task<RefundResponse> RefundPaymentAsync(RefundRequest request)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(request);
+        if (string.IsNullOrWhiteSpace(request.TransactionReference))
+        {
+            return FailedRefund(request, "Flutterwave transaction reference is required");
+        }
+
+        if (request.Amount <= 0)
+        {
+            return FailedRefund(request, "Flutterwave refund amount must be greater than zero");
+        }
+
+        try
+        {
+            var encodedReference = Uri.EscapeDataString(request.TransactionReference);
+            using var verificationResponse = await _httpClient.GetAsync(
+                $"/v3/transactions/verify_by_reference?tx_ref={encodedReference}");
+            var verificationBody = await verificationResponse.Content.ReadAsStringAsync();
+
+            using var verificationDocument = JsonDocument.Parse(verificationBody);
+            var verificationRoot = verificationDocument.RootElement;
+            if (!verificationResponse.IsSuccessStatusCode ||
+                !IsSuccessfulRoot(verificationRoot) ||
+                !verificationRoot.TryGetProperty("data", out var transaction) ||
+                !TryGetTransactionId(transaction, out var transactionId))
+            {
+                return FailedRefund(
+                    request,
+                    GetMessage(verificationRoot, "Flutterwave transaction could not be resolved"));
+            }
+
+            var transactionStatus = GetString(transaction, "status");
+            if (!string.Equals(transactionStatus, "successful", StringComparison.OrdinalIgnoreCase))
+            {
+                return FailedRefund(request, "Only successful Flutterwave transactions can be refunded");
+            }
+
+            if (transaction.TryGetProperty("amount", out var transactionAmountElement) &&
+                transactionAmountElement.TryGetDecimal(out var transactionAmount) &&
+                request.Amount > transactionAmount)
+            {
+                return FailedRefund(request, "Refund amount exceeds the Flutterwave transaction amount");
+            }
+
+            var refundPayload = new
+            {
+                amount = request.Amount,
+                comments = string.IsNullOrWhiteSpace(request.Reason)
+                    ? "requested_by_customer"
+                    : request.Reason
+            };
+            using var content = new StringContent(
+                JsonSerializer.Serialize(refundPayload),
+                Encoding.UTF8,
+                "application/json");
+            using var refundResponse = await _httpClient.PostAsync(
+                $"/v3/transactions/{transactionId}/refund",
+                content);
+            var refundBody = await refundResponse.Content.ReadAsStringAsync();
+
+            using var refundDocument = JsonDocument.Parse(refundBody);
+            var root = refundDocument.RootElement;
+            if (!refundResponse.IsSuccessStatusCode ||
+                !IsSuccessfulRoot(root) ||
+                !root.TryGetProperty("data", out var data))
+            {
+                return FailedRefund(request, GetMessage(root, "Flutterwave refund was rejected"));
+            }
+
+            var providerStatus = GetString(data, "status").ToLowerInvariant();
+            var failed = providerStatus is "failed" or "error";
+            var pending = providerStatus is "new" or "pending" or "processing";
+            var responseStatus = failed
+                ? PaymentStatus.Failed
+                : pending
+                    ? PaymentStatus.Pending
+                    : PaymentStatus.Refunded;
+            var refundReference = GetString(data, "flw_ref");
+            if (string.IsNullOrWhiteSpace(refundReference) &&
+                data.TryGetProperty("id", out var refundId))
+            {
+                refundReference = refundId.ToString();
+            }
+
+            var refundType = transaction.TryGetProperty("amount", out var originalAmountElement) &&
+                originalAmountElement.TryGetDecimal(out var originalAmount) &&
+                request.Amount == originalAmount
+                    ? "full"
+                    : "partial";
+
+            return new RefundResponse
+            {
+                Success = !failed,
+                RefundReference = refundReference,
+                TransactionReference = request.TransactionReference,
+                Message = failed
+                    ? GetMessage(root, "Flutterwave refund failed")
+                    : $"Flutterwave {refundType} refund {providerStatus}",
+                Amount = data.TryGetProperty("amount_refunded", out var refundedAmount) &&
+                    refundedAmount.TryGetDecimal(out var parsedAmount)
+                        ? parsedAmount
+                        : request.Amount,
+                Status = responseStatus,
+                RefundDate = TryGetDate(data, "created_at") ?? DateTime.UtcNow
+            };
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogWarning(ex, "Flutterwave refund request timed out for {Reference}",
+                request.TransactionReference);
+            return FailedRefund(request, "Flutterwave refund request timed out");
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "Flutterwave returned an invalid refund response for {Reference}",
+                request.TransactionReference);
+            return FailedRefund(request, "Flutterwave returned an invalid response");
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "Flutterwave refund request failed for {Reference}",
+                request.TransactionReference);
+            return FailedRefund(request, "Flutterwave refund request failed");
+        }
     }
 
     public Task<PaymentMethodResponse> SavePaymentMethodAsync(PaymentMethodRequest request)
@@ -190,4 +311,45 @@ public class FlutterwaveGateway : IPaymentGateway
             };
         }
     }
+
+    private static bool IsSuccessfulRoot(JsonElement root) =>
+        string.Equals(GetString(root, "status"), "success", StringComparison.OrdinalIgnoreCase);
+
+    private static bool TryGetTransactionId(JsonElement data, out string transactionId)
+    {
+        transactionId = data.TryGetProperty("id", out var id) &&
+            id.ValueKind is JsonValueKind.Number or JsonValueKind.String
+                ? id.ToString()
+                : string.Empty;
+        return !string.IsNullOrWhiteSpace(transactionId);
+    }
+
+    private static string GetMessage(JsonElement root, string fallback)
+    {
+        var message = GetString(root, "message");
+        return string.IsNullOrWhiteSpace(message) ? fallback : message;
+    }
+
+    private static string GetString(JsonElement element, string name) =>
+        element.ValueKind == JsonValueKind.Object &&
+        element.TryGetProperty(name, out var value) &&
+        value.ValueKind == JsonValueKind.String
+            ? value.GetString() ?? string.Empty
+            : string.Empty;
+
+    private static DateTime? TryGetDate(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value) &&
+        value.ValueKind == JsonValueKind.String &&
+        DateTime.TryParse(value.GetString(), out var parsed)
+            ? parsed
+            : null;
+
+    private static RefundResponse FailedRefund(RefundRequest request, string message) => new()
+    {
+        Success = false,
+        TransactionReference = request.TransactionReference,
+        Message = message,
+        Amount = request.Amount,
+        Status = PaymentStatus.Failed
+    };
 }
