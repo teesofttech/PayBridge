@@ -15,15 +15,15 @@ public class OrderService
     // ── Internal record ───────────────────────────────────────────────────────
 
     public record Order(
-        string  OrderId,
-        string  CustomerEmail,
+        string OrderId,
+        string CustomerEmail,
         decimal Amount,
-        string  Currency,
-        string  Description)
+        string Currency,
+        string Description)
     {
-        public PaymentStatus Status          { get; set; } = PaymentStatus.Pending;
-        public string        TransactionRef  { get; set; } = string.Empty;
-        public DateTime      PaidAt          { get; set; }
+        public PaymentStatus Status { get; set; } = PaymentStatus.Pending;
+        public string TransactionRef { get; set; } = string.Empty;
+        public DateTime PaidAt { get; set; }
     }
 
     // ── Storage ───────────────────────────────────────────────────────────────
@@ -38,17 +38,17 @@ public class OrderService
     /// in <c>Metadata</c> and tie the payment back to the order in your webhook.
     /// </summary>
     public Order Create(
-        string  customerEmail,
+        string customerEmail,
         decimal amount,
-        string  currency,
-        string  description)
+        string currency,
+        string description)
     {
         var order = new Order(
-            OrderId:       Guid.NewGuid().ToString("N")[..12].ToUpperInvariant(),
+            OrderId: Guid.NewGuid().ToString("N")[..12].ToUpperInvariant(),
             CustomerEmail: customerEmail,
-            Amount:        amount,
-            Currency:      currency,
-            Description:   description);
+            Amount: amount,
+            Currency: currency,
+            Description: description);
 
         _orders[order.OrderId] = order;
         return order;
@@ -69,11 +69,18 @@ public class OrderService
     public bool MarkAsPaid(string orderId, string transactionRef)
     {
         if (!_orders.TryGetValue(orderId, out var order)) return false;
+        lock (order)
+        {
+            if (order.Status == PaymentStatus.Successful)
+            {
+                return order.TransactionRef.Equals(transactionRef, StringComparison.Ordinal);
+            }
 
-        order.Status         = PaymentStatus.Successful;
-        order.TransactionRef = transactionRef;
-        order.PaidAt         = DateTime.UtcNow;
-        return true;
+            order.Status = PaymentStatus.Successful;
+            order.TransactionRef = transactionRef;
+            order.PaidAt = DateTime.UtcNow;
+            return true;
+        }
     }
 
     /// <summary>Marks an order as failed.</summary>
