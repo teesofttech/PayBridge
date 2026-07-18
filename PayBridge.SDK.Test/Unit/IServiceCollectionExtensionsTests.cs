@@ -136,6 +136,57 @@ public class IServiceCollectionExtensionsTests
     }
 
     [Fact]
+    public void AddPayBridge_WhenEnabledGatewaysContainsDuplicateValues_Throws()
+    {
+        var configuration = BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["PaymentGatewayConfig:EnabledGateways:0"] = "Paystack",
+            ["PaymentGatewayConfig:EnabledGateways:1"] = "Paystack",
+            ["PaymentGatewayConfig:Paystack:SecretKey"] = "sk_test_paystack"
+        });
+        var services = new ServiceCollection();
+        services.AddLogging();
+
+        var action = () => services.AddPayBridge(configuration);
+
+        action.Should().Throw<Exception>()
+            .WithMessage("*appears more than once*");
+    }
+
+    [Fact]
+    public void AddPayBridge_WhenEnabledGatewayIsUndefinedEnumValue_Throws()
+    {
+        var configuration = BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["PaymentGatewayConfig:EnabledGateways:0"] = "999"
+        });
+        var services = new ServiceCollection();
+        services.AddLogging();
+
+        var action = () => services.AddPayBridge(configuration);
+
+        action.Should().Throw<Exception>()
+            .WithMessage("*not a defined PaymentGatewayType*");
+    }
+
+    [Fact]
+    public void AddPayBridge_WhenEnabledGatewayUsesPlaceholderCredential_Throws()
+    {
+        var configuration = BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["PaymentGatewayConfig:EnabledGateways:0"] = "Paystack",
+            ["PaymentGatewayConfig:Paystack:SecretKey"] = "YOUR_PAYSTACK_SECRET_KEY"
+        });
+        var services = new ServiceCollection();
+        services.AddLogging();
+
+        var action = () => services.AddPayBridge(configuration);
+
+        action.Should().Throw<Exception>()
+            .WithMessage("*Paystack*missing required configuration values*");
+    }
+
+    [Fact]
     public void AddPayBridge_WhenDefaultGatewayIsMissingRequiredConfig_Throws()
     {
         var configuration = BuildConfiguration(new Dictionary<string, string?>

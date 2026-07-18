@@ -178,25 +178,58 @@ public static class IServiceCollectionExtensions
 
     private static void ValidateEnabledGatewayConfiguration(PaymentGatewayConfig config)
     {
+        var errors = new List<string>();
+        var seenGateways = new HashSet<PaymentGatewayType>();
+
         foreach (var gateway in config.EnabledGateways)
         {
+            if (!Enum.IsDefined(typeof(PaymentGatewayType), gateway))
+            {
+                errors.Add(
+                    $"Enabled gateway value '{(int)gateway}' is not a defined PaymentGatewayType.");
+                continue;
+            }
+
             if (gateway == PaymentGatewayType.Automatic)
             {
-                throw new PaymentConfigurationException(
+                errors.Add(
                     "PaymentGatewayConfig:EnabledGateways cannot include Automatic. " +
                     "Use concrete gateway types only.");
+                continue;
+            }
+
+            if (!seenGateways.Add(gateway))
+            {
+                errors.Add(
+                    $"Enabled gateway '{gateway}' appears more than once. " +
+                    "Remove duplicate entries.");
+                continue;
             }
 
             if (!IsGatewayConfigured(config, gateway))
             {
-                throw new PaymentConfigurationException(
+                errors.Add(
                     $"Enabled gateway '{gateway}' is missing required configuration values.");
             }
+        }
+
+        if (errors.Count > 0)
+        {
+            throw new PaymentConfigurationException(
+                "Invalid PaymentGatewayConfig:EnabledGateways configuration:" +
+                Environment.NewLine +
+                string.Join(Environment.NewLine, errors.Select(error => $" - {error}")));
         }
     }
 
     private static void ValidateDefaultGatewayConfiguration(PaymentGatewayConfig config)
     {
+        if (!Enum.IsDefined(typeof(PaymentGatewayType), config.DefaultGateway))
+        {
+            throw new PaymentConfigurationException(
+                $"Default gateway value '{(int)config.DefaultGateway}' is not a defined PaymentGatewayType.");
+        }
+
         if (config.DefaultGateway == PaymentGatewayType.Automatic)
         {
             return;
