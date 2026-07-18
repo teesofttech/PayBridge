@@ -52,6 +52,9 @@ nav:
       - Overview: quickstart.md
       - Automatic Routing: automatic-gateway-routing.md
       - Payment Idempotency: payment-idempotency.md
+      - API Cookbook: api-cookbook.md
+  - Reference:
+      - Gateway Capability Matrix: gateway-capability-matrix.md
   - Security:
       - Webhook Security: webhook-security.md
       - Webhook Replay Protection: webhook-replay-protection.md
@@ -61,3 +64,5 @@ nav:
       - Integration Testing: integration-testing.md
       - Refund Persistence: refund-persistence.md
       - Flutterwave Refunds: flutterwave-refunds.md
+  - Release Management:
+      - Versioning Strategy & Release Notes: versioning-and-release-notes.md
