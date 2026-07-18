@@ -208,8 +208,9 @@ public static class IServiceCollectionExtensions
 
             if (!IsGatewayConfigured(config, gateway))
             {
+                var missingSettings = GetMissingGatewayConfigurationKeys(config, gateway);
                 errors.Add(
-                    $"Enabled gateway '{gateway}' is missing required configuration values.");
+                    $"Enabled gateway '{gateway}' is missing required configuration values: {string.Join(", ", missingSettings)}.");
             }
         }
 
@@ -342,6 +343,80 @@ public static class IServiceCollectionExtensions
             PaymentGatewayType.PeachPayments => HasValue(config.PeachPayments.EntityId) && HasValue(config.PeachPayments.AccessToken),
             _ => false
         };
+    }
+
+    private static IReadOnlyList<string> GetMissingGatewayConfigurationKeys(PaymentGatewayConfig config, PaymentGatewayType gateway)
+    {
+        var missingSettings = new List<string>();
+
+        void AddIfMissing(string key, string value)
+        {
+            if (!HasValue(value))
+            {
+                missingSettings.Add(key);
+            }
+        }
+
+        switch (gateway)
+        {
+            case PaymentGatewayType.Paystack:
+                AddIfMissing("PaymentGatewayConfig:Paystack:SecretKey", config.Paystack.SecretKey);
+                break;
+            case PaymentGatewayType.Flutterwave:
+                AddIfMissing("PaymentGatewayConfig:FlutterwaveConfig:SecretKey", config.FlutterwaveConfig.SecretKey);
+                break;
+            case PaymentGatewayType.Stripe:
+                AddIfMissing("PaymentGatewayConfig:Stripe:SecretKey", config.Stripe.SecretKey);
+                break;
+            case PaymentGatewayType.Checkout:
+                AddIfMissing("PaymentGatewayConfig:Checkout:SecretKey", config.Checkout.SecretKey);
+                break;
+            case PaymentGatewayType.BenefitPay:
+                AddIfMissing("PaymentGatewayConfig:BenefitPay:MerchantId", config.BenefitPay.MerchantId);
+                AddIfMissing("PaymentGatewayConfig:BenefitPay:ApiKey", config.BenefitPay.ApiKey);
+                break;
+            case PaymentGatewayType.Knet:
+                AddIfMissing("PaymentGatewayConfig:Knet:TransportId", config.Knet.TransportId);
+                AddIfMissing("PaymentGatewayConfig:Knet:Password", config.Knet.Password);
+                break;
+            case PaymentGatewayType.Monnify:
+                AddIfMissing("PaymentGatewayConfig:Monnify:ApiKey", config.Monnify.ApiKey);
+                AddIfMissing("PaymentGatewayConfig:Monnify:SecretKey", config.Monnify.SecretKey);
+                AddIfMissing("PaymentGatewayConfig:Monnify:ContractCode", config.Monnify.ContractCode);
+                break;
+            case PaymentGatewayType.Squad:
+                AddIfMissing("PaymentGatewayConfig:Squad:SecretKey", config.Squad.SecretKey);
+                break;
+            case PaymentGatewayType.Korapay:
+                AddIfMissing("PaymentGatewayConfig:Korapay:SecretKey", config.Korapay.SecretKey);
+                break;
+            case PaymentGatewayType.Interswitch:
+                AddIfMissing("PaymentGatewayConfig:Interswitch:ClientId", config.Interswitch.ClientId);
+                AddIfMissing("PaymentGatewayConfig:Interswitch:ClientSecret", config.Interswitch.ClientSecret);
+                AddIfMissing("PaymentGatewayConfig:Interswitch:MerchantCode", config.Interswitch.MerchantCode);
+                break;
+            case PaymentGatewayType.Remita:
+                AddIfMissing("PaymentGatewayConfig:Remita:MerchantId", config.Remita.MerchantId);
+                AddIfMissing("PaymentGatewayConfig:Remita:ServiceTypeId", config.Remita.ServiceTypeId);
+                AddIfMissing("PaymentGatewayConfig:Remita:ApiKey", config.Remita.ApiKey);
+                break;
+            case PaymentGatewayType.Opay:
+                AddIfMissing("PaymentGatewayConfig:Opay:MerchantId", config.Opay.MerchantId);
+                AddIfMissing("PaymentGatewayConfig:Opay:SecretKey", config.Opay.SecretKey);
+                break;
+            case PaymentGatewayType.DpoGroup:
+                AddIfMissing("PaymentGatewayConfig:DpoGroup:CompanyToken", config.DpoGroup.CompanyToken);
+                break;
+            case PaymentGatewayType.PawaPay:
+                AddIfMissing("PaymentGatewayConfig:PawaPay:ApiToken", config.PawaPay.ApiToken);
+                break;
+            case PaymentGatewayType.PeachPayments:
+                AddIfMissing("PaymentGatewayConfig:PeachPayments:EntityId", config.PeachPayments.EntityId);
+                AddIfMissing("PaymentGatewayConfig:PeachPayments:AccessToken", config.PeachPayments.AccessToken);
+                break;
+        }
+
+        return missingSettings;
     }
 
     private static bool HasValue(string value)

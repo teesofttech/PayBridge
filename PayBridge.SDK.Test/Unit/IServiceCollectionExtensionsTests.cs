@@ -183,7 +183,7 @@ public class IServiceCollectionExtensionsTests
         var action = () => services.AddPayBridge(configuration);
 
         action.Should().Throw<Exception>()
-            .WithMessage("*Paystack*missing required configuration values*");
+            .WithMessage("*Paystack*missing required configuration values:*PaymentGatewayConfig:Paystack:SecretKey*");
     }
 
     [Fact]
