@@ -11,9 +11,13 @@ public sealed class MockHttpMessageHandler : HttpMessageHandler
 {
     private readonly Queue<MockHttpResponse> _queue = new();
     private readonly List<HttpRequestMessage> _requests = new();
+    private readonly List<string?> _requestBodies = new();
 
     /// <summary>All requests made through this handler, in order.</summary>
     public IReadOnlyList<HttpRequestMessage> Requests => _requests.AsReadOnly();
+
+    /// <summary>Request bodies captured before request content is disposed.</summary>
+    public IReadOnlyList<string?> RequestBodies => _requestBodies.AsReadOnly();
 
     /// <summary>The most recent request made through this handler.</summary>
     public HttpRequestMessage? LastRequest => _requests.Count > 0 ? _requests[^1] : null;
@@ -46,11 +50,14 @@ public sealed class MockHttpMessageHandler : HttpMessageHandler
 
     // ── Core override ─────────────────────────────────────────────────────────
 
-    protected override Task<HttpResponseMessage> SendAsync(
+    protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
         _requests.Add(request);
+        _requestBodies.Add(request.Content is null
+            ? null
+            : await request.Content.ReadAsStringAsync(cancellationToken));
 
         if (_queue.Count == 0)
         {
@@ -65,7 +72,7 @@ public sealed class MockHttpMessageHandler : HttpMessageHandler
             Content = new StringContent(mock.Body, Encoding.UTF8, mock.ContentType)
         };
 
-        return Task.FromResult(response);
+        return response;
     }
 
     // ── Assertion helpers ─────────────────────────────────────────────────────
