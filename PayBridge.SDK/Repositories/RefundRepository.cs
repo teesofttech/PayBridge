@@ -145,6 +145,7 @@ public sealed class RefundRepository(
             trackedRefund.RefundReference = string.IsNullOrWhiteSpace(response.RefundReference)
                 ? trackedRefund.Id
                 : response.RefundReference;
+            var previousStatus = trackedRefund.Status;
             trackedRefund.Status = response.Success ? response.Status : PaymentStatus.Failed;
             trackedRefund.ProcessedAt = trackedRefund.Status == PaymentStatus.Pending
                 ? null
@@ -159,6 +160,11 @@ public sealed class RefundRepository(
                         item.Status == PaymentStatus.Refunded)
                     .Select(item => item.Amount)
                     .SumAsync();
+
+                if (previousStatus != PaymentStatus.Refunded)
+                {
+                    confirmedAmount += trackedRefund.Amount;
+                }
 
                 if (confirmedAmount >= payment.Amount)
                 {
