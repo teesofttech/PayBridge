@@ -1,0 +1,14 @@
+verbose = true
+exclude_loopback = true
+exclude_private = true
+max_retries = 2
+retry_wait_time = 2
+accept = [200, 206, 301, 302, 429]
+
+exclude = [
+  "http://localhost",
+  "https://localhost",
+  "127.0.0.1",
+  "https://developer.flutterwave.com",
+  "https://dashboard.paystack.com/#/settings/developers"
+]
