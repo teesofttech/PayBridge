@@ -413,7 +413,7 @@ public class PaymentService : IPaymentService
         {
             Id = Guid.NewGuid().ToString("N"),
             PaymentTransactionReference = request.TransactionReference,
-            IdempotencyKey = request.IdempotencyKey ?? string.Empty,
+            IdempotencyKey = string.IsNullOrWhiteSpace(request.IdempotencyKey) ? null : request.IdempotencyKey,
             RequestFingerprint = fingerprint,
             Amount = request.Amount,
             Currency = transaction.Currency,
