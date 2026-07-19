@@ -25,5 +25,15 @@ public class PayBridgeDbContext : DbContext
 
         modelBuilder.Entity<RefundTransaction>()
             .HasIndex(refund => new { refund.PaymentTransactionReference, refund.Status });
+        modelBuilder.Entity<RefundTransaction>()
+            .HasIndex(refund => refund.IdempotencyKey)
+            .IsUnique()
+            .HasFilter("[IdempotencyKey] IS NOT NULL");
+        modelBuilder.Entity<RefundTransaction>()
+            .Property(refund => refund.IdempotencyKey)
+            .HasMaxLength(255);
+        modelBuilder.Entity<RefundTransaction>()
+            .Property(refund => refund.RequestFingerprint)
+            .HasMaxLength(64);
     }
 }

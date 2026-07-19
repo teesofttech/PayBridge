@@ -1,8 +1,10 @@
 using System.Data;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using PayBridge.SDK.Entities;
 using PayBridge.SDK.Enums;
+using PayBridge.SDK.Dtos.Response;
 using PayBridge.SDK.Interfaces;
 
 namespace PayBridge.SDK;
@@ -82,6 +84,13 @@ public sealed class RefundRepository(
         }
     }
 
+    public async Task<RefundTransaction?> GetByIdempotencyKeyAsync(string idempotencyKey)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(idempotencyKey);
+        return await _dbContext.Refunds
+            .FirstOrDefaultAsync(refund => refund.IdempotencyKey == idempotencyKey);
+    }
+
     public async Task<RefundTransaction?> GetByReferenceAsync(string reference)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(reference);
@@ -107,6 +116,64 @@ public sealed class RefundRepository(
         return refund;
     }
 
+    public async Task<RefundTransaction> FinalizeAsync(RefundTransaction refund, RefundResponse response)
+    {
+        ArgumentNullException.ThrowIfNull(refund);
+        ArgumentNullException.ThrowIfNull(response);
+
+        var strategy = _dbContext.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync(
+                IsolationLevel.Serializable);
+
+            var trackedRefund = await _dbContext.Refunds
+                .FirstOrDefaultAsync(item => item.Id == refund.Id);
+            if (trackedRefund is null)
+            {
+                throw new InvalidOperationException($"Refund not found: {refund.Id}");
+            }
+
+            var payment = await _dbContext.Transactions
+                .FirstOrDefaultAsync(item => item.TransactionReference == trackedRefund.PaymentTransactionReference);
+            if (payment is null)
+            {
+                throw new InvalidOperationException(
+                    $"Payment transaction not found: {trackedRefund.PaymentTransactionReference}");
+            }
+
+            trackedRefund.RefundReference = string.IsNullOrWhiteSpace(response.RefundReference)
+                ? trackedRefund.Id
+                : response.RefundReference;
+            trackedRefund.Status = response.Success ? response.Status : PaymentStatus.Failed;
+            trackedRefund.ProcessedAt = trackedRefund.Status == PaymentStatus.Pending
+                ? null
+                : response.RefundDate == default ? DateTime.UtcNow : response.RefundDate;
+            trackedRefund.GatewayResponse = JsonSerializer.Serialize(response);
+
+            if (trackedRefund.Status == PaymentStatus.Refunded)
+            {
+                var confirmedAmount = await _dbContext.Refunds
+                    .Where(item =>
+                        item.PaymentTransactionReference == trackedRefund.PaymentTransactionReference &&
+                        item.Status == PaymentStatus.Refunded)
+                    .Select(item => item.Amount)
+                    .SumAsync();
+
+                if (confirmedAmount >= payment.Amount)
+                {
+                    payment.Status = PaymentStatus.Refunded;
+                    _dbContext.Transactions.Update(payment);
+                }
+            }
+
+            _dbContext.Refunds.Update(trackedRefund);
+            await _dbContext.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return trackedRefund;
+        });
+    }
+
     private static void PrepareForInsert(RefundTransaction refund)
     {
         if (string.IsNullOrWhiteSpace(refund.Id))
@@ -117,6 +184,11 @@ public sealed class RefundRepository(
         if (string.IsNullOrWhiteSpace(refund.RefundReference))
         {
             refund.RefundReference = refund.Id;
+        }
+
+        if (string.IsNullOrWhiteSpace(refund.RequestFingerprint))
+        {
+            refund.RequestFingerprint = string.Empty;
         }
 
         if (refund.CreatedAt == default)
