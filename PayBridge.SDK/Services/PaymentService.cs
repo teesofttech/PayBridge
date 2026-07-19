@@ -371,10 +371,50 @@ public class PaymentService : IPaymentService
             throw new PaymentGatewayException($"Gateway {selectedGateway} is not configured");
         }
 
+        var fingerprint = ComputeRefundFingerprint(request);
+
+        if (!string.IsNullOrWhiteSpace(request.IdempotencyKey))
+        {
+            var existingRefund = await _refundRepository.GetByIdempotencyKeyAsync(request.IdempotencyKey);
+            if (existingRefund is not null)
+            {
+                if (!CryptographicOperations.FixedTimeEquals(
+                        Encoding.UTF8.GetBytes(existingRefund.RequestFingerprint),
+                        Encoding.UTF8.GetBytes(fingerprint)))
+                {
+                    throw new PaymentGatewayException(
+                        "The idempotency key was already used with different refund parameters.");
+                }
+
+                if (!string.IsNullOrWhiteSpace(existingRefund.GatewayResponse))
+                {
+                    var storedResponse = JsonSerializer.Deserialize<RefundResponse>(existingRefund.GatewayResponse)
+                        ?? throw new PaymentGatewayException("The stored refund response is invalid.");
+
+                    return storedResponse;
+                }
+
+                return new RefundResponse
+                {
+                    Success = existingRefund.Status == PaymentStatus.Refunded,
+                    TransactionReference = existingRefund.PaymentTransactionReference,
+                    RefundReference = existingRefund.RefundReference,
+                    Amount = existingRefund.Amount,
+                    Status = existingRefund.Status,
+                    Message = existingRefund.Status == PaymentStatus.Pending
+                        ? "Refund is still processing"
+                        : "Refund already recorded",
+                    RefundDate = existingRefund.ProcessedAt ?? existingRefund.CreatedAt
+                };
+            }
+        }
+
         var refund = new RefundTransaction
         {
             Id = Guid.NewGuid().ToString("N"),
             PaymentTransactionReference = request.TransactionReference,
+            IdempotencyKey = string.IsNullOrWhiteSpace(request.IdempotencyKey) ? null : request.IdempotencyKey,
+            RequestFingerprint = fingerprint,
             Amount = request.Amount,
             Currency = transaction.Currency,
             Reason = request.Reason,
@@ -399,13 +439,16 @@ public class PaymentService : IPaymentService
         }
         catch (Exception ex)
         {
-            refund.Status = PaymentStatus.Failed;
-            refund.ProcessedAt = DateTime.UtcNow;
-            refund.GatewayResponse = JsonSerializer.Serialize(new
+            await _refundRepository.FinalizeAsync(refund, new RefundResponse
             {
-                ErrorType = ex.GetType().Name
+                Success = false,
+                TransactionReference = request.TransactionReference,
+                RefundReference = refund.RefundReference,
+                Amount = request.Amount,
+                Status = PaymentStatus.Failed,
+                Message = ex.Message,
+                RefundDate = DateTime.UtcNow
             });
-            await _refundRepository.UpdateAsync(refund);
             _logger.LogError(ex, "Refund processing failed with {Gateway}", selectedGateway);
             throw new PaymentGatewayException($"Refund processing failed with {selectedGateway}", ex);
         }
@@ -413,31 +456,29 @@ public class PaymentService : IPaymentService
         _logger.LogInformation("Refund processing {Status}: {Reference}, Refund Reference: {RefundReference}",
             response.Success ? "successful" : "failed", request.TransactionReference, response.RefundReference);
 
-        refund.RefundReference = string.IsNullOrWhiteSpace(response.RefundReference)
-            ? refund.Id
-            : response.RefundReference;
-        refund.Status = response.Success ? response.Status : PaymentStatus.Failed;
-        refund.ProcessedAt = refund.Status == PaymentStatus.Pending
-            ? null
-            : response.RefundDate == default ? DateTime.UtcNow : response.RefundDate;
-        refund.GatewayResponse = JsonSerializer.Serialize(response);
-        await _refundRepository.UpdateAsync(refund);
+        var finalizedRefund = await _refundRepository.FinalizeAsync(refund, response);
 
-        if (refund.Status == PaymentStatus.Refunded)
+        return new RefundResponse
         {
-            var refunds = await _refundRepository.GetByPaymentReferenceAsync(
-                request.TransactionReference);
-            var confirmedAmount = refunds
-                .Where(item => item.Status == PaymentStatus.Refunded)
-                .Sum(item => item.Amount);
-            if (confirmedAmount >= transaction.Amount)
-            {
-                transaction.Status = PaymentStatus.Refunded;
-                await _transactionRepository.UpdateAsync(transaction);
-            }
-        }
+            Success = finalizedRefund.Status == PaymentStatus.Refunded,
+            RefundReference = finalizedRefund.RefundReference,
+            TransactionReference = finalizedRefund.PaymentTransactionReference,
+            Message = response.Message,
+            Amount = finalizedRefund.Amount,
+            Status = finalizedRefund.Status,
+            RefundDate = finalizedRefund.ProcessedAt ?? finalizedRefund.CreatedAt
+        };
+    }
 
-        return response;
+    private static string ComputeRefundFingerprint(RefundRequest request)
+    {
+        var payload = JsonSerializer.Serialize(new
+        {
+            request.TransactionReference,
+            request.Amount,
+            Reason = request.Reason ?? string.Empty
+        });
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payload)));
     }
 
     private PaymentGatewayType SelectBestGateway(PaymentRequest request)

@@ -4,6 +4,11 @@ namespace PayBridge.SDK.Entities;
 public class RefundTransaction
 {
     /// <summary>
+    /// Optional application-level idempotency key for the refund attempt
+    /// </summary>
+    public string? IdempotencyKey { get; set; }
+
+    /// <summary>
     /// Unique identifier for the refund
     /// </summary>
     public string Id { get; set; } = string.Empty;
@@ -47,6 +52,11 @@ public class RefundTransaction
     /// Raw response from the payment gateway
     /// </summary>
     public string GatewayResponse { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Stable fingerprint of the refund request used to validate idempotent retries
+    /// </summary>
+    public string RequestFingerprint { get; set; } = string.Empty;
 
     /// <summary>
     /// When the refund was created
