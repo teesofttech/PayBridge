@@ -10,17 +10,18 @@ namespace PayBridge.SDK.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            var (keyType, fingerprintType) = GetProviderColumnTypes();
             migrationBuilder.AddColumn<string>(
                 name: "IdempotencyKey",
                 table: "Refunds",
-                type: "nvarchar(255)",
+                type: keyType,
                 maxLength: 255,
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "RequestFingerprint",
                 table: "Refunds",
-                type: "nvarchar(64)",
+                type: fingerprintType,
                 maxLength: 64,
                 nullable: false,
                 defaultValue: "");
@@ -30,7 +31,29 @@ namespace PayBridge.SDK.Migrations
                 table: "Refunds",
                 column: "IdempotencyKey",
                 unique: true,
-                filter: "[IdempotencyKey] IS NOT NULL");
+                filter: ActiveProvider.Contains("SqlServer")
+                    ? "[IdempotencyKey] IS NOT NULL"
+                    : null);
+        }
+
+        private (string Key, string Fingerprint) GetProviderColumnTypes()
+        {
+            if (ActiveProvider.Contains("Npgsql"))
+            {
+                return ("character varying(255)", "character varying(64)");
+            }
+
+            if (ActiveProvider.Contains("MySql"))
+            {
+                return ("varchar(255)", "varchar(64)");
+            }
+
+            if (ActiveProvider.Contains("Sqlite"))
+            {
+                return ("TEXT", "TEXT");
+            }
+
+            return ("nvarchar(255)", "nvarchar(64)");
         }
 
         /// <inheritdoc />
