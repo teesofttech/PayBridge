@@ -22,6 +22,7 @@
 ### Start Here
 
 - [Quick Start](quickstart.md): Configure, run, and process your first transaction flow.
+- [API Cookbook](api-cookbook.md): End-to-end integration patterns and production checklists.
 - [Automatic Routing](automatic-gateway-routing.md): Understand route selection and fallback behavior.
 - [Payment Idempotency](payment-idempotency.md): Prevent duplicate effects across retries.
 
@@ -37,6 +38,11 @@
 - [Integration Testing](integration-testing.md): Sandbox preflight gates and run interpretation.
 - [Refund Persistence](refund-persistence.md): Durable refund lifecycle handling.
 - [Flutterwave Refunds](flutterwave-refunds.md): Known behavior and current implementation notes.
+
+### Reference and Release
+
+- [Gateway Capability Matrix](gateway-capability-matrix.md): Provider support for create/verify/refund/webhooks/auth/currencies.
+- [Versioning Strategy & Release Notes](versioning-and-release-notes.md): SemVer policy, release gates, and versioned docs approach.
 
 ## Recommended Reading Order
 

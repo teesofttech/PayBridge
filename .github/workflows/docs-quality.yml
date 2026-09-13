@@ -1,0 +1,70 @@
+name: Docs Quality
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - docs/**
+      - mkdocs.yml
+      - README.md
+      - README.nuget.md
+      - .github/workflows/docs-quality.yml
+      - .markdownlint-cli2.jsonc
+      - .lychee.toml
+  push:
+    branches:
+      - master
+    paths:
+      - docs/**
+      - mkdocs.yml
+      - README.md
+      - README.nuget.md
+      - .github/workflows/docs-quality.yml
+      - .markdownlint-cli2.jsonc
+      - .lychee.toml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docs-quality:
+    name: Markdown lint, links, and strict docs build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Markdown lint
+        uses: DavidAnson/markdownlint-cli2-action@v20
+        with:
+          config: .markdownlint-cli2.jsonc
+          globs: |
+            docs/**/*.md
+            README.md
+            README.nuget.md
+
+      - name: Link check
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --config .lychee.toml
+            docs/**/*.md
+            README.md
+            README.nuget.md
+          fail: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install MkDocs Material
+        run: |
+          python -m pip install --upgrade pip
+          pip install mkdocs-material
+
+      - name: Build docs (strict)
+        run: mkdocs build --strict
